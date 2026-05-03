@@ -1,0 +1,13 @@
+# Secrets — never commit these
+.env
+*.env
+secrets.json
+credentials.json
+
+# Node
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
