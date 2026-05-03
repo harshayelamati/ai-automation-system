@@ -51,6 +51,21 @@ It processes natural language requests via Telegram and runs 15+ scheduled workf
 
 ---
 
+## 📸 Live Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>🌅 Morning Briefing</b><br/><sub>Daily automated summary — gold, stocks, USD/INR, calendar</sub><br/><img src="docs/screenshots/screenshot-briefing.jpg" width="220"/></td>
+    <td align="center"><b>🤖 On-Demand Assistant</b><br/><sub>Weather, time zones, currency conversion, stocks — instantly</sub><br/><img src="docs/screenshots/screenshot-assistant.jpg" width="220"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>💼 SAP Job Alerts</b><br/><sub>Hourly scan — new jobs delivered with direct links</sub><br/><img src="docs/screenshots/screenshot-job-alerts.jpg" width="220"/></td>
+    <td align="center"><b>📝 Notes & To-Do</b><br/><sub>Persistent memory — save notes and tasks via chat</sub><br/><img src="docs/screenshots/screenshot-notes.jpg" width="220"/></td>
+  </tr>
+</table>
+
+---
+
 ## Workflows (15+ total)
 
 ### 🔔 1. SAP Job Alert — 24/7 (`workflows/sap_job_alert.json`)
