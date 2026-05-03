@@ -1,0 +1,43 @@
+{
+  "name": "Daily Finance Briefing",
+  "description": "Scheduled morning workflow. Fetches live gold prices, USD/INR exchange rate, and major stock indices. Formats a clean summary and delivers to Telegram every morning at 8am.",
+  "schedule": "Every day at 8:00 AM",
+  "nodes": [
+    {
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "rule": { "hour": 8, "minute": 0 }
+      }
+    },
+    {
+      "name": "Fetch Gold Price",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Live gold price in USD per troy ounce"
+    },
+    {
+      "name": "Fetch USD/INR Rate",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Live currency exchange rate"
+    },
+    {
+      "name": "Fetch Stock Indices",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "S&P 500, NASDAQ, Dow Jones daily performance"
+    },
+    {
+      "name": "Format Briefing",
+      "type": "n8n-nodes-base.code",
+      "description": "Combines all data into a clean formatted Telegram message"
+    },
+    {
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID"
+      }
+    }
+  ],
+  "sample_output": "📊 Morning Finance Briefing\n\n🥇 Gold: $2,345/oz (+0.8%)\n💵 USD/INR: ₹83.42\n📈 S&P 500: 5,234 (+0.4%)\n📈 NASDAQ: 16,421 (+0.6%)\n📉 Dow Jones: 38,901 (-0.1%)\n\n⏰ 8:00 AM — May 2, 2026",
+  "note": "This is a documented workflow structure. API keys and credentials are not included."
+}

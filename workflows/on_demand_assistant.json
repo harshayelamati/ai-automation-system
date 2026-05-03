@@ -1,0 +1,46 @@
+{
+  "name": "On-Demand AI Assistant (Telegram → Claude API)",
+  "description": "Listens for Telegram messages. Sends user input to Claude API with relevant context. Returns natural language answers instantly. Handles queries like 'What's my schedule today?', 'What's the gold price?', 'Summarize my emails'.",
+  "trigger": "Telegram message (any text)",
+  "nodes": [
+    {
+      "name": "Telegram Bot Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "description": "Listens for incoming messages to the bot"
+    },
+    {
+      "name": "Route by Intent",
+      "type": "n8n-nodes-base.switch",
+      "description": "Routes to correct data source based on message content (finance / calendar / weather / general)"
+    },
+    {
+      "name": "Fetch Relevant Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Fetches live data from appropriate API based on intent"
+    },
+    {
+      "name": "Claude API — Generate Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Sends user message + live data context to Claude API. Returns natural language answer.",
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "model": "claude-3-5-haiku-20241022",
+        "note": "Replace YOUR_CLAUDE_API_KEY with your Anthropic API key"
+      }
+    },
+    {
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.telegram",
+      "description": "Sends Claude's response back to the user in Telegram"
+    }
+  ],
+  "example_queries": [
+    "What's the gold price right now?",
+    "What do I have on my calendar today?",
+    "What's the weather in Sunnyvale?",
+    "Any new SAP jobs today?",
+    "Summarize my unread emails"
+  ],
+  "note": "This is a documented workflow structure. API keys and credentials are not included."
+}

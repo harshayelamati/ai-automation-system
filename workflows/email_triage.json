@@ -1,0 +1,48 @@
+{
+  "name": "Email Triage — Intelligent Alert System",
+  "description": "Monitors Gmail continuously. Classifies emails using Claude API. Urgent emails (USCIS, job offers, banking) are delivered instantly to Telegram. Promotional emails are silently filtered. Reduces inbox noise by ~80%.",
+  "nodes": [
+    {
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "description": "Polls Gmail every 5 minutes for new emails"
+    },
+    {
+      "name": "Classify with Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "description": "Sends email subject + sender to Claude API for urgency classification",
+      "parameters": {
+        "url": "https://api.anthropic.com/v1/messages",
+        "method": "POST",
+        "note": "Replace YOUR_CLAUDE_API_KEY with your Anthropic API key"
+      }
+    },
+    {
+      "name": "Is Urgent?",
+      "type": "n8n-nodes-base.if",
+      "description": "Routes urgent emails to Telegram alert, drops the rest"
+    },
+    {
+      "name": "Send Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "description": "Sends formatted urgent email alert to Telegram",
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID"
+      }
+    }
+  ],
+  "urgent_categories": [
+    "USCIS / immigration notices",
+    "Job offer emails",
+    "Banking and financial alerts",
+    "OPT / STEM OPT / EAD updates",
+    "Direct recruiter outreach"
+  ],
+  "filtered_categories": [
+    "Promotional emails",
+    "Newsletters",
+    "Marketing campaigns",
+    "Social media notifications"
+  ],
+  "note": "This is a documented workflow structure. Full JSON export available on request. API keys and credentials are not included."
+}
