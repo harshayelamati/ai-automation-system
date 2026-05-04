@@ -55,12 +55,12 @@ It processes natural language requests via Telegram and runs 15+ scheduled workf
 
 <table>
   <tr>
-    <td align="center"><b>🌅 Morning Briefing</b><br/><sub>Daily automated summary — gold, stocks, USD/INR, calendar</sub><br/><img src="docs/screenshots/screenshot-briefing.jpg" width="220"/></td>
-    <td align="center"><b>🤖 On-Demand Assistant</b><br/><sub>Weather, time zones, currency conversion, stocks — instantly</sub><br/><img src="docs/screenshots/screenshot-assistant.jpg" width="220"/></td>
+    <td align="center"><b> Morning Briefing</b><br/><sub>Daily automated summary — gold, stocks, USD/INR, calendar</sub><br/><img src="docs/screenshots/screenshot-briefing.jpg" width="220"/></td>
+    <td align="center"><b> On-Demand Assistant</b><br/><sub>Weather, time zones, currency conversion, stocks — instantly</sub><br/><img src="docs/screenshots/screenshot-assistant.jpg" width="220"/></td>
   </tr>
   <tr>
-    <td align="center"><b>💼 SAP Job Alerts</b><br/><sub>Hourly scan — new jobs delivered with direct links</sub><br/><img src="docs/screenshots/screenshot-job-alerts.jpg" width="220"/></td>
-    <td align="center"><b>📝 Notes & To-Do</b><br/><sub>Persistent memory — save notes and tasks via chat</sub><br/><img src="docs/screenshots/screenshot-notes.jpg" width="220"/></td>
+    <td align="center"><b> SAP Job Alerts</b><br/><sub>Hourly scan — new jobs delivered with direct links</sub><br/><img src="docs/screenshots/screenshot-job-alerts.jpg" width="220"/></td>
+    <td align="center"><b> Notes & To-Do</b><br/><sub>Persistent memory — save notes and tasks via chat</sub><br/><img src="docs/screenshots/screenshot-notes.jpg" width="220"/></td>
   </tr>
 </table>
 
@@ -68,7 +68,7 @@ It processes natural language requests via Telegram and runs 15+ scheduled workf
 
 ## Workflows (15+ total)
 
-### 🔔 1. SAP Job Alert — 24/7 (`workflows/sap_job_alert.json`)
+###  1. SAP Job Alert — 24/7 (`workflows/sap_job_alert.json`)
 Runs every hour. Searches 3 role categories across JSearch API (aggregates LinkedIn, Indeed, Glassdoor, ZipRecruiter). Filters for H1B-friendly companies and sponsorship keywords. Deduplicates across runs. Sends formatted Telegram alerts for new matches only.
 
 **Key features:**
@@ -80,7 +80,7 @@ Runs every hour. Searches 3 role categories across JSearch API (aggregates Linke
 
 ---
 
-### 📧 2. Intelligent Email Triage (`workflows/email_triage.json`)
+###  2. Intelligent Email Triage (`workflows/email_triage.json`)
 Monitors Gmail every 5 minutes. Classifies emails using Claude API.
 - **Urgent** (USCIS, job offers, banking) → instant Telegram alert
 - **Promotional / newsletters** → silently filtered
@@ -88,12 +88,12 @@ Monitors Gmail every 5 minutes. Classifies emails using Claude API.
 
 ---
 
-### 📊 3. Daily Finance Briefing (`workflows/finance_briefing.json`)
+###  3. Daily Finance Briefing (`workflows/finance_briefing.json`)
 Runs every morning at 8 AM. Fetches live gold price, USD/INR rate, S&P 500, NASDAQ, and Dow Jones. Formats and delivers a clean market summary to Telegram.
 
 ---
 
-### 🤖 4. On-Demand AI Assistant (`workflows/on_demand_assistant.json`)
+###  4. On-Demand AI Assistant (`workflows/on_demand_assistant.json`)
 Listens for Telegram messages. Routes by intent. Fetches relevant live data. Sends to Claude API with context. Returns natural language answers in seconds.
 
 Example queries:
@@ -104,22 +104,22 @@ Example queries:
 
 ---
 
-### 🌤️ 5. Weather Briefing
+###  5. Weather Briefing
 Morning weather alert for Sunnyvale, CA. Fetches forecast data, formats a clean summary, delivers to Telegram.
 
 ---
 
-### 📰 6. Daily News Briefing
+###  6. Daily News Briefing
 Fetches top headlines across selected categories each morning. Delivered as a formatted Telegram digest.
 
 ---
 
-### 🛂 7. Immigration & USCIS Tracker
+###  7. Immigration & USCIS Tracker
 Monitors USCIS case status. Sends instant Telegram alert on any case status change. Critical for OPT / H1B applicants.
 
 ---
 
-### 🗓️ 8. Google Calendar Integration
+###  8. Google Calendar Integration
 Pulls today's and tomorrow's events from Google Calendar on demand. Returns natural language schedule summary via Telegram.
 
 ---
