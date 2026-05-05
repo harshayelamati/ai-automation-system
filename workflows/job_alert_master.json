@@ -1,0 +1,1083 @@
+{
+  "name": "Job Alert Master — Multi-Source",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "b1000001-0000-0000-0000-000000000001",
+      "name": "Trigger: RSS (30 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const queries = [\n  // SAP roles\n  { q: 'SAP ABAP Developer',               label: 'SAP ABAP Developer'       },\n  { q: 'SAP Technical Consultant S4HANA',  label: 'SAP Technical Consultant' },\n  { q: 'SAP BTP Integration Developer',    label: 'SAP BTP Integration'      },\n  { q: 'SAP BTP CPI Integration Suite',    label: 'SAP BTP CPI'              },\n  { q: 'SAP HANA Developer Analytics',     label: 'SAP HANA Developer'       },\n  { q: 'SAP Functional Consultant MM SD',  label: 'SAP Functional Consultant'},\n  // AI / Data roles\n  { q: 'Data Analyst SQL Business Intelligence', label: 'Data Analyst BI'       },\n  { q: 'Business Intelligence Analyst SAP',      label: 'BI Analyst SAP'        },\n  { q: 'RPA Developer Automation Engineer',      label: 'RPA Automation'        },\n  { q: 'AI Automation Specialist workflow',      label: 'AI Automation'         },\n  { q: 'AI Integration Engineer API',            label: 'AI Integration'        },\n  { q: 'ERP Consultant SAP',                     label: 'ERP Consultant SAP'    },\n];\nconst sapQueries = queries.slice(0, 6);\n\nasync function fetchRSS(url) {\n  try {\n    const resp = await fetch(url, {\n      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; JobBot/1.0)' },\n      signal: AbortSignal.timeout(12000),\n    });\n    return await resp.text();\n  } catch(e) {\n    console.log('RSS fetch failed:', url, e.message);\n    return '';\n  }\n}\n\nfunction parseRSS(xml, source, query) {\n  const jobs = [];\n  const re = /<item>([\\s\\S]*?)<\\/item>/gi;\n  let m;\n  while ((m = re.exec(xml)) !== null) {\n    const block = m[1];\n    const get = (tag) => {\n      const r = block.match(new RegExp(`<${tag}[^>]*>(?:<!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]>|([^<]*))`, 'i'));\n      return r ? (r[1] || r[2] || '').trim() : '';\n    };\n    const title = get('title');\n    if (!title || title.length < 4) continue;\n    const link = get('link') || get('guid');\n    const desc = get('description').replace(/<[^>]+>/g, '').slice(0, 600);\n    const company = get('source') || get('author') || '';\n    const pubDate = get('pubDate');\n    jobs.push({\n      id: `${source}-${(link || title).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,60)}`,\n      title, company, location: '', link,\n      description: desc, postedAt: pubDate, source, query,\n    });\n  }\n  return jobs;\n}\n\nconst all = [];\n\n// ── Indeed RSS — 12 queries ──────────────────────────────────────────────────\nfor (const { q, label } of queries) {\n  const url = `https://www.indeed.com/rss?q=${encodeURIComponent(q)}&l=United+States&sort=date`;\n  const xml = await fetchRSS(url);\n  if (xml) all.push(...parseRSS(xml, 'Indeed', label));\n  await new Promise(r => setTimeout(r, 300));\n}\n\n// ── Dice RSS — SAP queries only ──────────────────────────────────────────────\nfor (const { q, label } of sapQueries) {\n  const url = `https://www.dice.com/jobs/rss?q=${encodeURIComponent(q)}&countryCode=US`;\n  const xml = await fetchRSS(url);\n  if (xml) all.push(...parseRSS(xml, 'Dice', label));\n  await new Promise(r => setTimeout(r, 300));\n}\n\n// ── We Work Remotely — single feed, keyword-filtered ────────────────────────\nconst wwrXml = await fetchRSS('https://weworkremotely.com/remote-jobs.rss');\nif (wwrXml) {\n  const kw = ['sap','abap','automation','ai integration','data analyst','rpa','erp'];\n  const wwrJobs = parseRSS(wwrXml, 'WeWorkRemotely', 'Remote Tech')\n    .filter(j => kw.some(k => (j.title + j.description).toLowerCase().includes(k)));\n  all.push(...wwrJobs);\n}\n\nif (all.length === 0) return [{ json: { noJobs: true } }];\nreturn all.map(j => ({ json: j }));"
+      },
+      "id": "b1000002-0000-0000-0000-000000000002",
+      "name": "Fetch: All RSS Feeds",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        200
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Score + Dedup shared logic ──────────────────────────────────────────────\nconst staticData = $getWorkflowStaticData('global');\nif (!Array.isArray(staticData.seenJobIds))  staticData.seenJobIds  = [];\nif (!Array.isArray(staticData.digestQueue)) staticData.digestQueue = [];\n\nconst SEEN_LIMIT   = 5000;\nconst DIGEST_LIMIT = 300;\n\nconst inputItems = $input.all();\nif (inputItems.length === 0 || (inputItems.length === 1 && inputItems[0].json.noJobs)) {\n  return [{ json: { hasNew: false } }];\n}\n\nconst jobs = inputItems.map(i => i.json).filter(j => j.title);\n\nconst newJobs = [];\nfor (const job of jobs) {\n  const id = (job.id || (job.title + (job.company||'')).replace(/[^a-z0-9]/gi,'').toLowerCase()).slice(0, 80);\n  if (staticData.seenJobIds.includes(id)) continue;\n\n  staticData.seenJobIds.push(id);\n  if (staticData.seenJobIds.length > SEEN_LIMIT) staticData.seenJobIds.shift();\n\n  // ── Relevance scoring ───────────────────────────────────────────────────\n  let score = 0;\n  const t = (job.title       || '').toLowerCase();\n  const d = (job.description || '').toLowerCase();\n\n  if (/sap|abap|btp|s\\/4hana|s4hana|\\bhana\\b/.test(t))          score += 3;\n  if (/\\bai\\b|automation|data analyst|business intel|\\brpa\\b|integration/.test(t)) score += 2;\n  if (/ricef|odata|n8n|claude|\\bbw\\b|bw\\/4|\\bhana\\b/.test(d)) score += 2;\n  if (job.salary || /\\$[\\d,]+/.test(d))                           score += 1;\n  if (/remote|hybrid/.test(d + t))                                  score += 1;\n  if (job.postedAt) {\n    try {\n      const ageH = (Date.now() - new Date(job.postedAt).getTime()) / 3_600_000;\n      if (ageH <= 24) score += 1;\n    } catch(_) {}\n  }\n\n  const enriched = { ...job, score, id };\n  newJobs.push(enriched);\n\n  if (score < 3) {\n    staticData.digestQueue.push(enriched);\n    if (staticData.digestQueue.length > DIGEST_LIMIT)\n      staticData.digestQueue = staticData.digestQueue.slice(-DIGEST_LIMIT);\n  }\n}\n\nif (newJobs.length === 0) return [{ json: { hasNew: false } }];\n\n// Return only immediate-alert jobs (score >= 3) as items; low-score go to digest only\nconst alertJobs = newJobs.filter(j => j.score >= 3);\nif (alertJobs.length === 0) return [{ json: { hasNew: false } }];\n\nreturn alertJobs.map(j => ({ json: { ...j, hasNew: true } }));"
+      },
+      "id": "b1000003-0000-0000-0000-000000000003",
+      "name": "Score + Dedup: RSS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        200
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.hasNew }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b1000004-0000-0000-0000-000000000004",
+      "name": "IF: New RSS Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const job = $json;\nconst urgent = job.score >= 7;\nconst emoji  = urgent ? '🚨' : '🔔';\nconst header = urgent ? '*URGENT — HIGH MATCH JOB*' : 'New Job Alert';\n\nconst loc  = job.location    || 'Location N/A';\nconst comp = job.company     || 'Company N/A';\nconst link = job.link        || '';\nconst applyLine = link ? `🔗 [Apply Now](${link})` : '🔗 Apply link N/A';\n\nconst msg =\n`${emoji} ${header}\n\n💼 *${job.title}*\n🏢 ${comp}\n📍 ${loc}\n🔎 Source: ${job.source} | Query: ${job.query}\n⭐ Match Score: ${job.score}/10\n\n${applyLine}`;\n\nreturn [{ json: { text: msg, chatId: 'YOUR_TELEGRAM_CHAT_ID', jobData: job } }];"
+      },
+      "id": "b1000005-0000-0000-0000-000000000005",
+      "name": "Format: RSS Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        140
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId || 'YOUR_TELEGRAM_CHAT_ID' }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "b1000006-0000-0000-0000-000000000006",
+      "name": "Send: Telegram (RSS)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1700,
+        140
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Job Tracker",
+          "mode": "name"
+        },
+        "dataMode": "autoMapInputData",
+        "options": {}
+      },
+      "id": "b1000007-0000-0000-0000-000000000007",
+      "name": "Log: Google Sheets (RSS)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1400,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */12 * * *"
+            }
+          ]
+        }
+      },
+      "id": "b2000001-0000-0000-0000-000000000001",
+      "name": "Trigger: JSearch (12h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "SAP ABAP Developer"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            },
+            {
+              "name": "date_posted",
+              "value": "today"
+            },
+            {
+              "name": "country",
+              "value": "us"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2000002-0000-0000-0000-000000000002",
+      "name": "JSearch: SAP ABAP Developer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        560
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "SAP ABAP Developer"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "SAP Technical Consultant S4HANA"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            },
+            {
+              "name": "date_posted",
+              "value": "today"
+            },
+            {
+              "name": "country",
+              "value": "us"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2000003-0000-0000-0000-000000000002",
+      "name": "JSearch: SAP Technical Consultant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        660
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "SAP Technical Consultant"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "SAP BTP Integration Developer"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            },
+            {
+              "name": "date_posted",
+              "value": "today"
+            },
+            {
+              "name": "country",
+              "value": "us"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2000004-0000-0000-0000-000000000002",
+      "name": "JSearch: SAP BTP Integration",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        760
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "SAP BTP Integration"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "SAP BTP CPI Integration Suite"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            },
+            {
+              "name": "date_posted",
+              "value": "today"
+            },
+            {
+              "name": "country",
+              "value": "us"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2000005-0000-0000-0000-000000000002",
+      "name": "JSearch: SAP BTP CPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        860
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "SAP BTP CPI"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "SAP HANA Developer Analytics"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            },
+            {
+              "name": "date_posted",
+              "value": "today"
+            },
+            {
+              "name": "country",
+              "value": "us"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2000006-0000-0000-0000-000000000002",
+      "name": "JSearch: SAP HANA Developer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        960
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "SAP HANA Developer"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-RapidAPI-Key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "X-RapidAPI-Host",
+              "value": "jsearch.p.rapidapi.com"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "SAP Functional Consultant MM SD"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            },
+            {
+              "name": "num_pages",
+              "value": "2"
+            },
+            {
+              "name": "date_posted",
+              "value": "today"
+            },
+            {
+              "name": "country",
+              "value": "us"
+            }
+          ]
+        },
+        "sendBody": false,
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2000007-0000-0000-0000-000000000002",
+      "name": "JSearch: SAP Functional Consultant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        1060
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "SAP Functional Consultant"
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "b2000008-0000-0000-0000-000000000008",
+      "name": "Merge: JSearch Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        800,
+        810
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const all = [];\nfor (const item of $input.all()) {\n  const jobs  = (item.json.data || []);\n  const query = item.json._query || 'SAP';\n  for (const j of jobs) {\n    const loc = j.job_city\n      ? `${j.job_city}, ${j.job_state || ''}`\n      : (j.job_is_remote ? 'Remote' : 'USA');\n    all.push({\n      id:          j.job_id || `jsearch-${(j.job_title||'')+(j.employer_name||'')}`.replace(/\\s/g,'').slice(0,80),\n      title:       j.job_title       || '',\n      company:     j.employer_name   || '',\n      location:    loc,\n      link:        j.job_apply_link  || j.job_google_link || '',\n      description: (j.job_description || '').slice(0, 600),\n      postedAt:    j.job_posted_at_datetime_utc || '',\n      source:      'JSearch',\n      query,\n    });\n  }\n}\nif (all.length === 0) return [{ json: { noJobs: true } }];\nreturn all.map(j => ({ json: j }));"
+      },
+      "id": "b2000009-0000-0000-0000-000000000009",
+      "name": "Normalize: JSearch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1050,
+        810
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── Score + Dedup shared logic ──────────────────────────────────────────────\nconst staticData = $getWorkflowStaticData('global');\nif (!Array.isArray(staticData.seenJobIds))  staticData.seenJobIds  = [];\nif (!Array.isArray(staticData.digestQueue)) staticData.digestQueue = [];\n\nconst SEEN_LIMIT   = 5000;\nconst DIGEST_LIMIT = 300;\n\nconst inputItems = $input.all();\nif (inputItems.length === 0 || (inputItems.length === 1 && inputItems[0].json.noJobs)) {\n  return [{ json: { hasNew: false } }];\n}\n\nconst jobs = inputItems.map(i => i.json).filter(j => j.title);\n\nconst newJobs = [];\nfor (const job of jobs) {\n  const id = (job.id || (job.title + (job.company||'')).replace(/[^a-z0-9]/gi,'').toLowerCase()).slice(0, 80);\n  if (staticData.seenJobIds.includes(id)) continue;\n\n  staticData.seenJobIds.push(id);\n  if (staticData.seenJobIds.length > SEEN_LIMIT) staticData.seenJobIds.shift();\n\n  // ── Relevance scoring ───────────────────────────────────────────────────\n  let score = 0;\n  const t = (job.title       || '').toLowerCase();\n  const d = (job.description || '').toLowerCase();\n\n  if (/sap|abap|btp|s\\/4hana|s4hana|\\bhana\\b/.test(t))          score += 3;\n  if (/\\bai\\b|automation|data analyst|business intel|\\brpa\\b|integration/.test(t)) score += 2;\n  if (/ricef|odata|n8n|claude|\\bbw\\b|bw\\/4|\\bhana\\b/.test(d)) score += 2;\n  if (job.salary || /\\$[\\d,]+/.test(d))                           score += 1;\n  if (/remote|hybrid/.test(d + t))                                  score += 1;\n  if (job.postedAt) {\n    try {\n      const ageH = (Date.now() - new Date(job.postedAt).getTime()) / 3_600_000;\n      if (ageH <= 24) score += 1;\n    } catch(_) {}\n  }\n\n  const enriched = { ...job, score, id };\n  newJobs.push(enriched);\n\n  if (score < 3) {\n    staticData.digestQueue.push(enriched);\n    if (staticData.digestQueue.length > DIGEST_LIMIT)\n      staticData.digestQueue = staticData.digestQueue.slice(-DIGEST_LIMIT);\n  }\n}\n\nif (newJobs.length === 0) return [{ json: { hasNew: false } }];\n\n// Return only immediate-alert jobs (score >= 3) as items; low-score go to digest only\nconst alertJobs = newJobs.filter(j => j.score >= 3);\nif (alertJobs.length === 0) return [{ json: { hasNew: false } }];\n\nreturn alertJobs.map(j => ({ json: { ...j, hasNew: true } }));"
+      },
+      "id": "b2000010-0000-0000-0000-000000000010",
+      "name": "Score + Dedup: JSearch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        810
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.hasNew }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b2000011-0000-0000-0000-000000000011",
+      "name": "IF: New JSearch Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1550,
+        810
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const job = $json;\nconst urgent = job.score >= 7;\nconst emoji  = urgent ? '🚨' : '🔔';\nconst header = urgent ? '*URGENT — HIGH MATCH JOB*' : 'New Job Alert';\n\nconst loc  = job.location    || 'Location N/A';\nconst comp = job.company     || 'Company N/A';\nconst link = job.link        || '';\nconst applyLine = link ? `🔗 [Apply Now](${link})` : '🔗 Apply link N/A';\n\nconst msg =\n`${emoji} ${header}\n\n💼 *${job.title}*\n🏢 ${comp}\n📍 ${loc}\n🔎 Source: ${job.source} | Query: ${job.query}\n⭐ Match Score: ${job.score}/10\n\n${applyLine}`;\n\nreturn [{ json: { text: msg, chatId: 'YOUR_TELEGRAM_CHAT_ID', jobData: job } }];"
+      },
+      "id": "b2000012-0000-0000-0000-000000000012",
+      "name": "Format: JSearch Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        760
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId || 'YOUR_TELEGRAM_CHAT_ID' }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "b2000013-0000-0000-0000-000000000013",
+      "name": "Send: Telegram (JSearch)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2050,
+        760
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Job Tracker",
+          "mode": "name"
+        },
+        "dataMode": "autoMapInputData",
+        "options": {}
+      },
+      "id": "b2000014-0000-0000-0000-000000000014",
+      "name": "Log: Google Sheets (JSearch)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1800,
+        920
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8,12,16,20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "b3000001-0000-0000-0000-000000000001",
+      "name": "Trigger: Digest (4x/day)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd    = $getWorkflowStaticData('global');\nconst queue = sd.digestQueue || [];\nif (queue.length === 0) return [{ json: { hasJobs: false } }];\n\nsd.digestQueue = [];\nqueue.sort((a, b) => (b.score || 0) - (a.score || 0));\nreturn [{ json: { hasJobs: true, jobs: queue, count: queue.length } }];"
+      },
+      "id": "b3000002-0000-0000-0000-000000000002",
+      "name": "Read: Digest Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        1300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.hasJobs }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "b3000003-0000-0000-0000-000000000003",
+      "name": "IF: Has Digest Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        800,
+        1300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { jobs, count } = $json;\nconst timeStr = new Date().toLocaleTimeString('en-US', {\n  hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles'\n});\n\nconst top   = jobs.slice(0, 10);\nconst lines = top.map((j, i) => {\n  const link = j.link ? `[${j.title}](${j.link})` : j.title;\n  return `${i + 1}. ${link} @ *${j.company || 'N/A'}* ⭐${j.score} — ${j.source}`;\n});\n\nconst text =\n`📊 *Job Digest — ${timeStr} PST*\nFound *${count}* new jobs since last digest\n\n🏆 Top matches:\n${lines.join('\\n')}\n\n📋 All ${count} jobs logged to Job Tracker sheet.`;\n\nreturn [{ json: { text, chatId: 'YOUR_TELEGRAM_CHAT_ID' } }];"
+      },
+      "id": "b3000004-0000-0000-0000-000000000004",
+      "name": "Format: Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId || 'YOUR_TELEGRAM_CHAT_ID' }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "b3000005-0000-0000-0000-000000000005",
+      "name": "Send: Digest Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1400,
+        1300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Trigger: RSS (30 min)": {
+      "main": [
+        [
+          {
+            "node": "Fetch: All RSS Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch: All RSS Feeds": {
+      "main": [
+        [
+          {
+            "node": "Score + Dedup: RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score + Dedup: RSS": {
+      "main": [
+        [
+          {
+            "node": "IF: New RSS Jobs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: New RSS Jobs?": {
+      "main": [
+        [
+          {
+            "node": "Format: RSS Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log: Google Sheets (RSS)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Format: RSS Alert": {
+      "main": [
+        [
+          {
+            "node": "Send: Telegram (RSS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: JSearch (12h)": {
+      "main": [
+        [
+          {
+            "node": "JSearch: SAP ABAP Developer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "JSearch: SAP Technical Consultant",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "JSearch: SAP BTP Integration",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "JSearch: SAP BTP CPI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "JSearch: SAP HANA Developer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "JSearch: SAP Functional Consultant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge: JSearch Results": {
+      "main": [
+        [
+          {
+            "node": "Normalize: JSearch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize: JSearch": {
+      "main": [
+        [
+          {
+            "node": "Score + Dedup: JSearch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score + Dedup: JSearch": {
+      "main": [
+        [
+          {
+            "node": "IF: New JSearch Jobs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: New JSearch Jobs?": {
+      "main": [
+        [
+          {
+            "node": "Format: JSearch Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log: Google Sheets (JSearch)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Format: JSearch Alert": {
+      "main": [
+        [
+          {
+            "node": "Send: Telegram (JSearch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger: Digest (4x/day)": {
+      "main": [
+        [
+          {
+            "node": "Read: Digest Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read: Digest Queue": {
+      "main": [
+        [
+          {
+            "node": "IF: Has Digest Jobs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Has Digest Jobs?": {
+      "main": [
+        [
+          {
+            "node": "Format: Digest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Format: Digest": {
+      "main": [
+        [
+          {
+            "node": "Send: Digest Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSearch: SAP ABAP Developer": {
+      "main": [
+        [
+          {
+            "node": "Merge: JSearch Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSearch: SAP Technical Consultant": {
+      "main": [
+        [
+          {
+            "node": "Merge: JSearch Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "JSearch: SAP BTP Integration": {
+      "main": [
+        [
+          {
+            "node": "Merge: JSearch Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "JSearch: SAP BTP CPI": {
+      "main": [
+        [
+          {
+            "node": "Merge: JSearch Results",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "JSearch: SAP HANA Developer": {
+      "main": [
+        [
+          {
+            "node": "Merge: JSearch Results",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "JSearch: SAP Functional Consultant": {
+      "main": [
+        [
+          {
+            "node": "Merge: JSearch Results",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "timezone": "America/Los_Angeles",
+    "executionOrder": "v1"
+  },
+  "tags": [
+    "job-search",
+    "alerts"
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

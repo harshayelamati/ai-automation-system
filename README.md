@@ -68,15 +68,30 @@ It processes natural language requests via Telegram and runs 15+ scheduled workf
 
 ## Workflows (15+ total)
 
-###  1. SAP Job Alert — 24/7 (`workflows/sap_job_alert.json`)
-Runs every hour. Searches 3 role categories across JSearch API (aggregates LinkedIn, Indeed, Glassdoor, ZipRecruiter). Filters for H1B-friendly companies and sponsorship keywords. Deduplicates across runs. Sends formatted Telegram alerts for new matches only.
+### 🔔 1. Job Alert Master — Multi-Source (`workflows/job_alert_master.json`)
+
+A single n8n workflow covering all job search alert logic across 3 triggered paths:
+
+**Path A — RSS (every 30 minutes)**
+Polls Indeed + Dice + We Work Remotely RSS feeds across 12 search queries simultaneously. No API key needed for any of these.
+
+**Path B — JSearch API (every 12 hours)**
+Runs 6 SAP-focused queries through JSearch (aggregates LinkedIn, Indeed, Glassdoor, ZipRecruiter). Preserves the free tier (≤ 360 calls/month).
+
+**Path C — Digest (8 AM / 12 PM / 4 PM / 8 PM PST)**
+Reads queued low-scoring jobs and sends a formatted digest to Telegram.
+
+**12 search categories covered:**
+SAP ABAP Developer · SAP Technical Consultant · SAP BTP Integration · SAP BTP CPI · SAP HANA Developer · SAP Functional Consultant · Data Analyst BI · BI Analyst SAP · RPA Automation Engineer · AI Automation Specialist · AI Integration Engineer · ERP Consultant SAP
 
 **Key features:**
-- 3 parallel searches merged into one pipeline
-- H1B sponsor company list (Infosys, TCS, Wipro, Cognizant, Deloitte, Accenture, IBM, etc.)
-- Keyword filtering: `h1b`, `visa sponsor`, `will sponsor`, `opt accepted`
-- Cross-run deduplication (persists 3,000 seen job IDs)
-- Graceful error handling — continues if one search fails
+- 4 sources: Indeed RSS, Dice RSS, We Work Remotely, JSearch API
+- Relevance scoring (0–10): title match, skill keywords, salary, remote, recency
+- 🚨 Urgent alerts (score ≥ 7) vs 🔔 Normal alerts (score 3–6) — same Telegram bot
+- Low-score jobs queued for digest only (no noise)
+- Cross-run deduplication persists 5,000 job IDs
+- All jobs auto-logged to Google Sheets (title, company, location, link, score, source, date)
+- Graceful error handling — continues if one source fails
 
 ---
 
