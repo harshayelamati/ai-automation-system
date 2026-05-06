@@ -1,5 +1,5 @@
 {
-  "name": "HarryJobBuddy — AI Career OS",
+  "name": "HarryJobBuddy — AI Career OS v2",
   "nodes": [
     {
       "parameters": {
@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst msg = $json.message || $json;\nconst text   = (msg.text || msg.caption || '').trim();\nconst chatId = msg.chat?.id || sd.chatId || '';\n\n// Store chat ID permanently\nif (chatId && !sd.chatId) sd.chatId = chatId;\n\n// Conversation history (last 8 messages)\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'user', content: text });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\n// Build messages array for Claude (last 6 turns)\nconst messages = sd.history.slice(-6).map(h => ({ role: h.role, content: h.content }));\n\nreturn [{ json: {\n  chatId,\n  userMessage: text,\n  messages,\n  lastJob: sd.lastAnalyzedJob || null,\n} }];"
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst msg = $json.message || $json;\nconst text   = (msg.text || msg.caption || '').trim();\nconst chatId = msg.chat?.id || sd.chatId || '';\n\nif (chatId && !sd.chatId) sd.chatId = chatId;\n\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'user', content: text });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\nconst messages = sd.history.slice(-6).map(h => ({ role: h.role, content: h.content }));\n\nreturn [{ json: { chatId, userMessage: text, messages, lastJob: sd.lastAnalyzedJob || null } }];"
       },
       "id": "hj-02",
       "name": "Process Message",
@@ -62,7 +62,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 1024, system: \"You are HarryJobBuddy — Harsha's personal AI career companion. Not a chatbot. A friend who happens to be a career expert.\\n\\nABOUT HARSHA:\\n- SAP ABAP Developer, 5+ years experience (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Located in Sunnyvale, CA. On OPT visa, needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University, graduated August 2025\\n- Built a production 24/7 AI automation system (n8n + Claude API + Oracle Cloud + Telegram)\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst, RPA Developer\\n- DO NOT suggest: software engineer, iOS developer, mobile developer, roles requiring coding interviews or CS degrees\\n- GitHub: github.com/harshayelamati | LinkedIn: linkedin.com/in/harshayelamati\\n\\nPERSONALITY MODES (switch automatically):\\n- FRIEND MODE: casual chat, daily briefings, motivation. Tone: warm, brief, real. No excessive praise.\\n- COACH MODE: job evaluation, resume feedback, decisions. Tone: direct, honest, slightly strict.\\n- DRIVER MODE: when urgent high-match job appears OR if inactive >3 days. Tone: action-first, short, commanding.\\n\\nJOB SCORING:\\n- Score 8-10, Class=APPLY NOW: Strong match — skills fit, experience reasonable, real opportunity\\n- Score 5-7, Class=MAYBE: Partial match — worth reviewing, has some gaps\\n- Score 1-4, Class=SKIP: Weak match, waste of time, bad signal\\n\\nRULES:\\n- Always give a recommendation. Never be neutral.\\n- Keep messages SHORT (Telegram = phone screen). Max 200 words per message.\\n- Never fabricate skills or experience.\\n- Push toward action. Thinking > 1 hour about a job = bad habit.\\n- Be honest even when it stings.\\n\\nINTENT DETECTION:\\nAnalyze the user message and return ONE of these intents:\\n- analyze_job: user pasted a job description or job URL or asked about a specific job\\n- get_resume: user asked for a resume, \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this job\\\"\\n- applied: user said they applied (\\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\")\\n- company_info: user asked about a company\\n- compare_jobs: user wants to compare two or more jobs\\n- status: user asked about their progress, stats, applications count\\n- general: anything else (casual chat, questions, motivation, etc.)\\n\\nALWAYS respond with valid JSON only (no markdown, no other text):\\n{\\n  \\\"intent\\\": \\\"analyze_job|get_resume|applied|company_info|compare_jobs|status|general\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver\\\",\\n  \\\"response\\\": \\\"Your message to Harsha — short, mobile-friendly, punchy\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"]\\n}\\n\\nFor applied, structured = { \\\"company\\\": \\\"company name\\\", \\\"role\\\": \\\"job title\\\" }\\nFor get_resume, use last analyzed job context from conversation history. structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\", \\\"kw2\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor company_info, structured = null (put the info in response)\\nFor general, structured = null\", messages: $json.messages }) }}",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 2048, system: \"You are HarryJobBuddy — Harsha's personal AI career companion. Not a chatbot. A friend who happens to be a career expert.\\n\\nABOUT HARSHA:\\n- SAP ABAP Developer, 5+ years experience (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Located in Sunnyvale, CA. On OPT visa, needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University, graduated August 2025\\n- Built a production 24/7 AI automation system (n8n + Claude API + Oracle Cloud + Telegram)\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst, RPA Developer\\n- DO NOT suggest: software engineer, iOS developer, mobile developer, roles requiring coding interviews or CS degrees\\n- Skills: SAP ABAP, RICEF, Smart Forms, Adobe Forms, ALV Reports, OData, BAPI, IDoc, BDC, S/4HANA, HANA Studio, BW Transformations, Open Hub, n8n, Claude API, REST APIs, SQL, Oracle Cloud, GitHub\\n\\nPERSONALITY MODES (switch automatically):\\n- FRIEND MODE: casual chat, daily briefings, motivation. Tone: warm, brief, real. No excessive praise.\\n- COACH MODE: job evaluation, resume feedback, decisions. Tone: direct, honest, slightly strict.\\n- DRIVER MODE: when urgent high-match job appears OR if inactive >3 days. Tone: action-first, short, commanding.\\n\\nJOB SCORING:\\n- Score 8-10, Class=APPLY NOW: Strong match — skills fit, experience reasonable, real opportunity\\n- Score 5-7,  Class=MAYBE: Partial match — worth reviewing, has some gaps\\n- Score 1-4,  Class=SKIP: Weak match, waste of time, bad signal\\n\\nRULES:\\n- Always give a recommendation. Never be neutral.\\n- Keep responses SHORT for Telegram (phone screen) — EXCEPT cover_letter, interview_prep, skill_gap which need full detail.\\n- Never fabricate skills or experience.\\n- Push toward action. Thinking > 1 hour about a job = bad habit.\\n- Be honest even when it stings.\\n\\nINTENT DETECTION — return ONE of these:\\n- analyze_job: user pasted a job description, URL, or asked about a specific job\\n- get_resume: \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this job\\\"\\n- cover_letter: \\\"write cover letter\\\", \\\"cover letter for this job\\\"\\n- interview_prep: \\\"prepare me for interview\\\", \\\"what questions will they ask\\\", \\\"interview tips\\\"\\n- skill_gap: \\\"what skills am I missing\\\", \\\"skill gap\\\", \\\"what should I learn\\\"\\n- applied: \\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\"\\n- mark_outcome: \\\"got interview at X\\\", \\\"rejected by X\\\", \\\"got offer from X\\\", \\\"ghosted by X\\\"\\n- company_info: user asked about a company\\n- compare_jobs: user wants to compare two or more jobs\\n- status: user asked about progress, stats, applications count\\n- general: anything else (casual chat, motivation, questions)\\n\\nALWAYS respond with valid JSON only (no markdown, no other text):\\n{\\n  \\\"intent\\\": \\\"...\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver\\\",\\n  \\\"response\\\": \\\"Your message to Harsha\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"],\\n  \\\"missing_skills\\\": [\\\"Skill1\\\", \\\"Skill2\\\"],\\n  \\\"ats_score\\\": 82\\n}\\n\\nFor cover_letter: structured = null. Put the full 3-paragraph professional cover letter DIRECTLY in response field.\\nFormat: Dear Hiring Team, | Para 1: role + company + how you found it. | Para 2: 5+ yrs SAP ABAP experience highlights (RICEF, OData, S/4HANA migration) + AI automation project. | Para 3: OPT status, H1B sponsorship needed, call to action.\\n\\nFor interview_prep: structured = null. Put 8-10 likely interview questions with brief answer frameworks in response.\\nInclude: 3 technical (role-specific using Harsha's actual experience), 3 behavioral (STAR format), 2 company-fit, 1 salary negotiation tip. Use last analyzed job context.\\n\\nFor skill_gap: structured = null. In response: list each required skill from last analyzed job with ✅ Have / ❌ Missing / ⚡ Partial.\\nThen: Top 3 gaps + fastest way Harsha can fill each one.\\n\\nFor applied, structured = { \\\"company\\\": \\\"company name\\\", \\\"role\\\": \\\"job title\\\" }\\nFor get_resume, use last analyzed job. structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\", \\\"kw2\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor mark_outcome, structured = { \\\"company\\\": \\\"company name\\\", \\\"outcome\\\": \\\"interview|rejected|offer|ghosted\\\" }\\nFor company_info, compare_jobs, general, status: structured = null\", messages: $json.messages }) }}",
         "options": {}
       },
       "id": "hj-03",
@@ -77,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || $json.choices?.[0]?.message?.content || '';\n\nlet parsed;\ntry {\n  // Strip any accidental markdown code fences\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) {\n  parsed = { intent: 'general', mode: 'friend', response: raw || 'Sorry, something went wrong. Try again.', structured: null };\n}\n\n// Store assistant reply in conversation history\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'assistant', content: parsed.response });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\n// Persist last analyzed job for resume requests\nif (parsed.intent === 'analyze_job' && parsed.structured) {\n  sd.lastAnalyzedJob = parsed.structured;\n}\n\n// Log daily activity\nconst today = new Date().toDateString();\nif (!sd.dailyActivity)          sd.dailyActivity = {};\nif (!sd.dailyActivity[today])   sd.dailyActivity[today] = { analyzed: 0, applied: 0, lastActive: Date.now() };\nif (parsed.intent === 'analyze_job') sd.dailyActivity[today].analyzed++;\nif (parsed.intent === 'applied')     sd.dailyActivity[today].applied++;\nsd.dailyActivity[today].lastActive = Date.now();\n\n// Keep daily log for 30 days\nconst days = Object.keys(sd.dailyActivity);\nif (days.length > 30) {\n  const keep = days.sort().slice(-30);\n  sd.dailyActivity = Object.fromEntries(keep.map(d => [d, sd.dailyActivity[d]]));\n}\n\nconst chatId  = $('Process Message').item.json.chatId;\nconst lastJob = sd.lastAnalyzedJob || null;\n\nreturn [{ json: { ...parsed, chatId, lastJob } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || $json.choices?.[0]?.message?.content || '';\n\nlet parsed;\ntry {\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) {\n  parsed = { intent: 'general', mode: 'friend', response: raw || 'Sorry, something went wrong. Try again.', structured: null };\n}\n\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'assistant', content: parsed.response });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\nif (parsed.intent === 'analyze_job' && parsed.structured) {\n  sd.lastAnalyzedJob = parsed.structured;\n}\n\nconst today = new Date().toDateString();\nif (!sd.dailyActivity)        sd.dailyActivity = {};\nif (!sd.dailyActivity[today]) sd.dailyActivity[today] = { analyzed: 0, applied: 0, lastActive: Date.now() };\nif (parsed.intent === 'analyze_job') sd.dailyActivity[today].analyzed++;\nif (parsed.intent === 'applied')     sd.dailyActivity[today].applied++;\nsd.dailyActivity[today].lastActive = Date.now();\n\nconst days = Object.keys(sd.dailyActivity);\nif (days.length > 30) {\n  sd.dailyActivity = Object.fromEntries(days.sort().slice(-30).map(d => [d, sd.dailyActivity[d]]));\n}\n\nconst chatId  = $('Process Message').item.json.chatId;\nconst lastJob = sd.lastAnalyzedJob || null;\nreturn [{ json: { ...parsed, chatId, lastJob } }];"
       },
       "id": "hj-04",
       "name": "Parse Claude Response",
@@ -106,10 +106,22 @@
             },
             {
               "value2": "status"
+            },
+            {
+              "value2": "cover_letter"
+            },
+            {
+              "value2": "interview_prep"
+            },
+            {
+              "value2": "skill_gap"
+            },
+            {
+              "value2": "mark_outcome"
             }
           ]
         },
-        "fallbackOutput": 4
+        "fallbackOutput": 8
       },
       "id": "hj-05",
       "name": "Route: Intent Switch",
@@ -123,7 +135,7 @@
     {
       "parameters": {
         "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.text }}",
+        "text": "={{ $json.response }}",
         "additionalFields": {
           "parse_mode": "Markdown",
           "disable_web_page_preview": true
@@ -135,7 +147,7 @@
       "typeVersion": 1,
       "position": [
         1500,
-        160
+        80
       ],
       "credentials": {
         "telegramApi": {
@@ -147,7 +159,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst job = $json.lastJob || sd.lastAnalyzedJob || {};\n\nconst company  = (job.company || 'Company').replace(/[^a-zA-Z0-9]/g,'_');\nconst role     = job.title    || 'SAP Consultant';\nconst keywords = (job.keywords || []).join(', ');\nconst applyLink = job.link    || null;\nconst expReq   = job.exp_required || 'Not specified';\n\n// Build a targeted summary via Claude context\nconst tailoredSummary =\n  `SAP Technical Consultant and AI Automation Engineer with 5+ years of hands-on ABAP and enterprise consulting experience. \\\nExpertise in ${keywords || 'SAP BTP, Integration, S/4HANA, OData, RICEF'}. \\\nIndependently designed and deployed a production AI automation system (n8n + Claude API + Oracle Cloud, 24/7). \\\nMaster's in Data Analytics, Indiana Wesleyan University (2025). Actively seeking H1B sponsorship.`;\n\nconst ctx = JSON.stringify({\n  summary:    tailoredSummary,\n  company:    job.company || 'Company',\n  role:       role,\n  keywords:   job.keywords || [],\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n});\n\nreturn [{ json: {\n  buildCmd:   `node /home/ubuntu/job-scripts/build_resume_dynamic.js '${ctx.replace(/'/g, \"'\\\\''\")}'`,\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n  company:    job.company || 'Company',\n  role,\n  keywords,\n  applyLink,\n  expReq,\n  chatId: $json.chatId || sd.chatId,\n} }];"
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst job = $json.lastJob || sd.lastAnalyzedJob || {};\n\nconst company   = (job.company || 'Company').replace(/[^a-zA-Z0-9]/g,'_');\nconst role      = job.title    || 'SAP Consultant';\nconst keywords  = (job.keywords || []).join(', ');\nconst applyLink = job.link || job.apply_link || null;\nconst expReq    = job.exp_required || 'Not specified';\n\nconst tailoredSummary =\n  `SAP Technical Consultant and AI Automation Engineer with 5+ years of hands-on ABAP and enterprise consulting experience. \\\nExpertise in ${keywords || 'SAP BTP, Integration, S/4HANA, OData, RICEF'}. \\\nIndependently designed and deployed a production AI automation system (n8n + Claude API + Oracle Cloud, 24/7). \\\nMaster's in Data Analytics, Indiana Wesleyan University (2025). Actively seeking H1B sponsorship.`;\n\nconst ctx = JSON.stringify({\n  summary:    tailoredSummary,\n  company:    job.company || 'Company',\n  role,\n  keywords:   job.keywords || [],\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n});\n\nreturn [{ json: {\n  buildCmd:   `node /home/ubuntu/job-scripts/build_resume_dynamic.js '${ctx.replace(/'/g, \"'\\\\''\")}'`,\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n  pdfPath:    `/tmp/HarshaYelamati_${company}.pdf`,\n  company:    job.company || 'Company',\n  role, keywords, applyLink, expReq,\n  chatId: $json.chatId || sd.chatId,\n} }];"
       },
       "id": "hj-07",
       "name": "Prep: Resume Build",
@@ -155,7 +167,7 @@
       "typeVersion": 2,
       "position": [
         1500,
-        320
+        260
       ],
       "onError": "continueRegularOutput"
     },
@@ -169,7 +181,21 @@
       "typeVersion": 1,
       "position": [
         1750,
-        320
+        260
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "command": "={{ 'libreoffice --headless --convert-to pdf ' + $('Prep: Resume Build').item.json.outputPath + ' --outdir /tmp/' }}"
+      },
+      "id": "hj-08b",
+      "name": "Execute: Convert to PDF",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        140
       ],
       "onError": "continueRegularOutput"
     },
@@ -183,7 +209,21 @@
       "typeVersion": 1,
       "position": [
         2000,
-        320
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $('Prep: Resume Build').item.json.pdfPath }}"
+      },
+      "id": "hj-09b",
+      "name": "Read: Resume PDF",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        2250,
+        140
       ],
       "onError": "continueRegularOutput"
     },
@@ -203,7 +243,7 @@
       "typeVersion": 1,
       "position": [
         2250,
-        260
+        300
       ],
       "credentials": {
         "telegramApi": {
@@ -215,15 +255,41 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { company, role, keywords, applyLink, expReq } = $json;\nconst applyLine = applyLink ? `\\n🔗 Apply: ${applyLink}` : '';\n\nconst text = `📄 *Resume ready — ${role} @ ${company}*\n\n✅ Summary tailored to: ${keywords || 'your target role'}\n📋 Role: ${role}\n⏳ Experience needed: ${expReq}${applyLine}\n\nSend this .docx when applying. Good luck! 🙌`;\n\nreturn [{ json: { text, chatId: $json.chatId || sd.chatId } }];"
+        "operation": "sendDocument",
+        "chatId": "={{ $('Prep: Resume Build').item.json.chatId }}",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "={{ $('Prep: Resume Build').item.json.company }} — Tailored Resume PDF 📄"
+        }
+      },
+      "id": "hj-10b",
+      "name": "Send: PDF File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2500,
+        140
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { company, role, keywords, applyLink, expReq } = $json;\nconst sd = $getWorkflowStaticData('global');\nconst applyLine = applyLink ? `\\n🔗 Apply: ${applyLink}` : '';\n\nconst text = `📄 *Resume ready — ${role} @ ${company}*\n\n✅ Tailored to: ${keywords || 'your target role'}\n📋 Role: ${role}\n⏳ Experience needed: ${expReq}${applyLine}\n\nSent as DOCX above. Good luck! 🙌`;\n\nreturn [{ json: { text, chatId: $json.chatId || sd.chatId } }];"
       },
       "id": "hj-11",
       "name": "Format: Resume Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2250,
-        400
+        2500,
+        300
       ],
       "onError": "continueRegularOutput"
     },
@@ -241,8 +307,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        2500,
-        400
+        2750,
+        300
       ],
       "credentials": {
         "telegramApi": {
@@ -254,7 +320,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { structured, chatId } = $json;\nconst company = structured?.company || 'Unknown Company';\nconst role    = structured?.role    || 'Unknown Role';\nconst today   = new Date().toISOString().split('T')[0];\n\n// Track for follow-up\nif (!Array.isArray(sd.applications)) sd.applications = [];\nsd.applications.push({ company, role, dateApplied: today, status: 'Applied' });\n\n// Count week's applications\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekCount = sd.applications.filter(a => new Date(a.dateApplied) >= weekAgo).length;\nconst followUpDate = new Date(); followUpDate.setDate(followUpDate.getDate() + 7);\nconst followUpStr  = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n\nconst confirmText =\n  `✅ *Logged!* ${role} @ ${company}\\n\\nApplied: Today (${today})\\nFollow-up reminder: ${followUpStr}\\n\\nThis week: ${weekCount} application${weekCount !== 1 ? 's' : ''}. Keep going.`;\n\nreturn [{ json: {\n  chatId,\n  text:        confirmText,\n  rowData:     { company, role, dateApplied: today, status: 'Applied', source: 'Manual' },\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { structured, chatId } = $json;\nconst company = structured?.company || 'Unknown Company';\nconst role    = structured?.role    || 'Unknown Role';\nconst today   = new Date().toISOString().split('T')[0];\n\nif (!Array.isArray(sd.applications)) sd.applications = [];\nsd.applications.push({ company, role, dateApplied: today, status: 'Applied' });\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekCount = sd.applications.filter(a => new Date(a.dateApplied) >= weekAgo).length;\nconst followUpDate = new Date(); followUpDate.setDate(followUpDate.getDate() + 7);\nconst followUpStr  = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Logged!* ${role} @ ${company}\\n\\nApplied: Today (${today})\\nFollow-up: ${followUpStr}\\n\\nThis week: ${weekCount} application${weekCount !== 1 ? 's' : ''}. Keep going.`,\n  rowData: { company, role, dateApplied: today, status: 'Applied', source: 'Manual' },\n} }];"
       },
       "id": "hj-13",
       "name": "Process: Log Applied",
@@ -262,7 +328,7 @@
       "typeVersion": 2,
       "position": [
         1500,
-        480
+        440
       ],
       "onError": "continueRegularOutput"
     },
@@ -288,7 +354,7 @@
       "typeVersion": 4.5,
       "position": [
         1750,
-        480
+        440
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -313,7 +379,7 @@
       "typeVersion": 1,
       "position": [
         2000,
-        480
+        440
       ],
       "credentials": {
         "telegramApi": {
@@ -325,7 +391,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd     = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\n\nconst weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst apps     = sd.applications || [];\nconst weekApps = apps.filter(a => new Date(a.dateApplied) >= weekAgo);\nconst total    = apps.length;\nconst pending  = apps.filter(a => a.status === 'Applied').length;\nconst interviews = apps.filter(a => a.status === 'Interview').length;\n\nconst today    = new Date().toDateString();\nconst todayAct = sd.dailyActivity?.[today] || { analyzed: 0, applied: 0 };\n\nconst text = `📊 *Your Job Search Status*\n\nThis week: ${weekApps.length} applications\nAll time: ${total} total\n\nPending response: ${pending}\nInterviews: ${interviews}\n\nToday: Applied ${todayAct.applied} | Analyzed ${todayAct.analyzed}\n\nRecent applications:\n${apps.slice(-5).reverse().map(a => `• ${a.role} @ ${a.company} (${a.status})`).join('\\n') || 'None yet'}`;\n\nreturn [{ json: { text, chatId } }];"
+        "jsCode": "const sd     = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\n\nconst weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst apps     = sd.applications || [];\nconst weekApps = apps.filter(a => new Date(a.dateApplied) >= weekAgo);\nconst pending  = apps.filter(a => a.status === 'Applied').length;\nconst interviews = apps.filter(a => a.status === 'Interview').length;\nconst offers   = apps.filter(a => a.status === 'Offer').length;\nconst today    = new Date().toDateString();\nconst todayAct = sd.dailyActivity?.[today] || { analyzed: 0, applied: 0 };\n\nreturn [{ json: { chatId, text:\n  `📊 *Your Job Search Status*\n\nThis week: ${weekApps.length} applications | All time: ${apps.length}\nPending: ${pending} | Interviews: ${interviews} | Offers: ${offers}\n\nToday: Applied ${todayAct.applied} | Analyzed ${todayAct.analyzed}\n\nRecent:\n${apps.slice(-5).reverse().map(a => `• ${a.role} @ ${a.company} (${a.status})`).join('\\n') || 'None yet'}` } }];"
       },
       "id": "hj-16",
       "name": "Build: Status Report",
@@ -333,7 +399,7 @@
       "typeVersion": 2,
       "position": [
         1500,
-        620
+        580
       ],
       "onError": "continueRegularOutput"
     },
@@ -352,7 +418,7 @@
       "typeVersion": 1,
       "position": [
         1750,
-        620
+        580
       ],
       "credentials": {
         "telegramApi": {
@@ -365,7 +431,121 @@
     {
       "parameters": {
         "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.response }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-31",
+      "name": "Send: Cover Letter",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        700
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.response }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-32",
+      "name": "Send: Interview Prep",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        820
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.response }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-33",
+      "name": "Send: Skill Gap",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        940
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\n\nreturn [{ json: {\n  chatId,\n  text: $json.response,\n  rowData: { company, status: statusLabel, outcomeDate: new Date().toISOString().split('T')[0] },\n} }];"
+      },
+      "id": "hj-34",
+      "name": "Process: Mark Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        1060
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
         "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-35",
+      "name": "Send: Outcome Confirmed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1750,
+        1060
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.response }}",
         "additionalFields": {
           "parse_mode": "Markdown",
           "disable_web_page_preview": true
@@ -377,7 +557,129 @@
       "typeVersion": 1,
       "position": [
         1500,
-        780
+        1180
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinutes",
+              "value": 5
+            }
+          ]
+        },
+        "filters": {
+          "readStatus": "unread"
+        },
+        "options": {
+          "format": "resolved"
+        }
+      },
+      "id": "hj-40",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        1400
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $json;\nconst from    = (email.from?.value?.[0]?.address || String(email.from || '')).toLowerCase();\nconst subject = (email.subject || '').toLowerCase();\n\nconst jobSenders  = ['linkedin','indeed','dice.com','glassdoor','ziprecruiter',\n  'monster','careerbuilder','recruit','talent','hiring','hr@','careers@','jobs@'];\nconst jobKeywords = ['job','position','opportunity','role','opening',\n  'hiring','recruiter','apply','sap','developer','analyst','consultant',\n  'engineer','automation','abap','btp','data','remote'];\n\nconst isSenderMatch  = jobSenders.some(s => from.includes(s));\nconst isSubjectMatch = jobKeywords.some(k => subject.includes(k));\n\nif (!isSenderMatch && !isSubjectMatch) return [];\n\nconst emailText = `From: ${from}\\nSubject: ${email.subject || 'No subject'}\\n\\n${(email.text || email.snippet || '').slice(0, 3000)}`;\nreturn [{ json: { emailText } }];"
+      },
+      "id": "hj-41",
+      "name": "Filter: Job Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY_HERE"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 1024, system: \"You are a job extraction AI for Harsha, an SAP ABAP developer on OPT visa seeking H1B sponsorship.\\n\\nHARSHA'S PROFILE:\\n- SAP ABAP Developer, 5+ years (LTI Mindtree, Doowon, Elsoft)\\n- Target: SAP BTP, SAP Technical Consultant, AI Automation, Data Analyst, BI Analyst\\n- Location: Sunnyvale CA, prefers remote\\n- Skills: ABAP, RICEF, S/4HANA, OData, BAPI, IDoc, n8n, Claude API, SQL\\n\\nExtract the job from this email and score it against Harsha's profile.\\n\\nReturn ONLY valid JSON (no markdown):\\n{\\n  \\\"is_job\\\": true,\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"location\\\": \\\"city/remote\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"apply_link\\\": \\\"URL or null\\\",\\n  \\\"score\\\": 7,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"kw1\\\", \\\"kw2\\\"],\\n  \\\"alert_text\\\": \\\"full Telegram alert message (see format below)\\\"\\n}\\n\\nalert_text format:\\n📨 *New Job from Email*\\n\\n💼 [Title] @ [Company]\\n📍 [Location] | 💰 [Salary] | 🛂 H1B: [Yes/No/Unknown]\\n⭐ Score: [X]/10 — [APPLY NOW/MAYBE/SKIP]\\n\\n[1-2 sentence reasoning]\\n\\n🔗 [apply_link or \\\"Link in your email\\\"]\\n\\nReply *\\\"resume\\\"* to generate your tailored CV.\\n\\nIf the email is NOT about a job opening (newsletter, promo, billing, etc.), return: {\\\"is_job\\\": false}\", messages: [{ role: \"user\", content: $json.emailText }] }) }}",
+        "options": {}
+      },
+      "id": "hj-42",
+      "name": "Claude: Extract Gmail Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        700,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || '';\n\nlet parsed;\ntry {\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) { return []; }\n\nif (!parsed.is_job) return [];\n\nconst jobKey = `${(parsed.title||'').toLowerCase()}_${(parsed.company||'').toLowerCase()}`;\nif (!Array.isArray(sd.seenGmailJobs)) sd.seenGmailJobs = [];\nif (sd.seenGmailJobs.includes(jobKey)) return [];\nsd.seenGmailJobs.push(jobKey);\nif (sd.seenGmailJobs.length > 500) sd.seenGmailJobs = sd.seenGmailJobs.slice(-500);\n\nsd.lastAnalyzedJob = {\n  title: parsed.title, company: parsed.company,\n  link: parsed.apply_link, apply_link: parsed.apply_link,\n  keywords: parsed.keywords || [], exp_required: parsed.exp_required,\n  visa_sponsor: parsed.visa_sponsor, salary: parsed.salary,\n  location: parsed.location, score: parsed.score,\n  classification: parsed.classification,\n};\n\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nreturn [{ json: {\n  chatId,\n  text: parsed.alert_text || `📨 New job: ${parsed.title} @ ${parsed.company}\\n⭐ ${parsed.score}/10 — ${parsed.classification}`,\n} }];"
+      },
+      "id": "hj-43",
+      "name": "Parse: Gmail Job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        950,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-44",
+      "name": "Send: Gmail Job Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        1400
       ],
       "credentials": {
         "telegramApi": {
@@ -404,12 +706,12 @@
       "typeVersion": 1,
       "position": [
         200,
-        1000
+        1600
       ]
     },
     {
       "parameters": {
-        "jsCode": "const sd     = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\n// Get top 3 from digest queue (from job alert master workflow)\nconst queue = (sd.digestQueue || []).sort((a,b) => (b.score||0)-(a.score||0));\nconst top3  = queue.slice(0, 3);\n\n// Clear shown jobs from queue\nsd.digestQueue = queue.slice(3);\n\nconst today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });\nconst greeting = new Date().getHours() < 10 ? 'Good morning' : 'Hey';\n\nlet body = '';\nif (top3.length === 0) {\n  body = 'No new top matches queued right now. New alerts fire every 30 min.';\n} else {\n  const icons = ['🟢','🟡','🟡','🟠'];\n  body = top3.map((j, i) => {\n    const icon  = j.score >= 7 ? '🟢' : j.score >= 5 ? '🟡' : '🟠';\n    return `${i+1}. ${icon} *${j.title}* @ ${j.company || 'N/A'}\\n    ⭐${j.score}/10 | ${j.source || ''}`;\n  }).join('\\n\\n');\n}\n\nconst text = `☀️ ${greeting}, Harsha. ${today}\n\n${top3.length > 0 ? `Top ${top3.length} job${top3.length > 1 ? 's' : ''} for today:` : 'Today\\'s jobs:'}\n\n${body}\n\nPaste any job description to analyze it, or say \"resume\" after analyzing to get your tailored CV.`;\n\nreturn [{ json: { text, chatId } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst queue = (sd.digestQueue || []).sort((a,b) => (b.score||0)-(a.score||0));\nconst top3  = queue.slice(0, 3);\nsd.digestQueue = queue.slice(3);\n\nconst today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });\n\nlet body = top3.length === 0\n  ? 'No new top matches queued. Job alerts fire every 30 min.'\n  : top3.map((j,i) => {\n      const icon = j.score >= 7 ? '🟢' : j.score >= 5 ? '🟡' : '🟠';\n      return `${i+1}. ${icon} *${j.title}* @ ${j.company||'N/A'}\\n    ⭐${j.score}/10 | ${j.source||''}`;\n    }).join('\\n\\n');\n\nreturn [{ json: { chatId, text:\n  `☀️ Good morning, Harsha. ${today}\n\n${top3.length > 0 ? `Top ${top3.length} job${top3.length>1?'s':''} for today:` : \"Today's jobs:\"}\n\n${body}\n\nPaste any job to analyze it. Say *\"resume\"* after analyzing to get your tailored CV.` } }];"
       },
       "id": "hj-20",
       "name": "Build: Morning Briefing",
@@ -417,7 +719,7 @@
       "typeVersion": 2,
       "position": [
         500,
-        1000
+        1600
       ],
       "onError": "continueRegularOutput"
     },
@@ -436,7 +738,7 @@
       "typeVersion": 1,
       "position": [
         800,
-        1000
+        1600
       ],
       "credentials": {
         "telegramApi": {
@@ -463,12 +765,12 @@
       "typeVersion": 1,
       "position": [
         200,
-        1150
+        1750
       ]
     },
     {
       "parameters": {
-        "jsCode": "const sd     = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst today    = new Date().toDateString();\nconst activity = sd.dailyActivity?.[today] || { analyzed: 0, applied: 0 };\nconst weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekApps = (sd.applications || []).filter(a => new Date(a.dateApplied) >= weekAgo).length;\n\nlet mood = '';\nif (activity.applied === 0) {\n  mood = \"⚡ *You didn't apply today. That's a day lost. Tomorrow — pick 2 jobs and apply. No delays.*\";\n} else if (activity.applied >= 3) {\n  mood = \"💪 Solid day. Consistency is what gets you hired.\";\n} else {\n  mood = \"Good progress. Keep the momentum.\";\n}\n\nconst text = `🌙 *End of day — ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}*\n\nToday: Applied *${activity.applied}* | Analyzed *${activity.analyzed}*\nThis week: *${weekApps}* applications total\n\n${mood}`;\n\nreturn [{ json: { text, chatId } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst today    = new Date().toDateString();\nconst activity = sd.dailyActivity?.[today] || { analyzed: 0, applied: 0 };\nconst weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekApps = (sd.applications || []).filter(a => new Date(a.dateApplied) >= weekAgo).length;\n\nconst mood = activity.applied === 0\n  ? \"⚡ *You didn't apply today. That's a day lost. Tomorrow — pick 2 and apply. No delays.*\"\n  : activity.applied >= 3 ? \"💪 Solid day. Consistency is what gets you hired.\"\n  : \"Good progress. Keep the momentum.\";\n\nreturn [{ json: { chatId, text:\n  `🌙 *End of day — ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}*\n\nToday: Applied *${activity.applied}* | Analyzed *${activity.analyzed}*\nThis week: *${weekApps}* applications\n\n${mood}` } }];"
       },
       "id": "hj-23",
       "name": "Build: Evening Summary",
@@ -476,7 +778,7 @@
       "typeVersion": 2,
       "position": [
         500,
-        1150
+        1750
       ],
       "onError": "continueRegularOutput"
     },
@@ -495,7 +797,7 @@
       "typeVersion": 1,
       "position": [
         800,
-        1150
+        1750
       ],
       "credentials": {
         "telegramApi": {
@@ -522,12 +824,12 @@
       "typeVersion": 1,
       "position": [
         200,
-        1300
+        1900
       ]
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst apps = (sd.applications || []).filter(a => a.status === 'Applied');\nconst today = new Date();\nconst reminders = [];\n\nfor (const app of apps) {\n  const applied = new Date(app.dateApplied);\n  const daysAgo = Math.floor((today - applied) / 86400000);\n  if (daysAgo === 7 || daysAgo === 14) {\n    reminders.push(app);\n  }\n}\n\nif (reminders.length === 0) return [];\n\nreturn reminders.map(app => ({\n  json: {\n    chatId,\n    company: app.company,\n    role:    app.role,\n    daysAgo: Math.floor((today - new Date(app.dateApplied)) / 86400000),\n    text: `📬 *Follow-up reminder*\n\n${app.role} @ ${app.company}\nApplied ${Math.floor((today - new Date(app.dateApplied)) / 86400000)} days ago — no response yet.\n\n💬 Suggested message:\n_\"Hi, I wanted to follow up on my application for the ${app.role} role. I remain very interested in this opportunity and would love to connect. Thank you for your time.\"_\n\nReply *\"sent ${app.company}\"* to mark as followed up.`,\n  }\n}));"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst today = new Date();\nconst reminders = (sd.applications || []).filter(a => {\n  if (a.status !== 'Applied') return false;\n  const daysAgo = Math.floor((today - new Date(a.dateApplied)) / 86400000);\n  return daysAgo === 7 || daysAgo === 14;\n});\n\nif (reminders.length === 0) return [];\n\nreturn reminders.map(app => {\n  const daysAgo = Math.floor((today - new Date(app.dateApplied)) / 86400000);\n  return { json: { chatId, text:\n    `📬 *Follow-up Reminder*\n\n${app.role} @ ${app.company}\nApplied ${daysAgo} days ago — no response logged yet.\n\n💬 Suggested message:\n_\"Hi, I wanted to follow up on my application for the ${app.role} role at ${app.company}. I remain very interested and would love to connect. Thank you.\"_\n\nReply *\"sent ${app.company}\"* to mark followed up, or *\"rejected ${app.company}\"* if you heard back.` } };\n});"
       },
       "id": "hj-26",
       "name": "Check: Follow-Ups Due",
@@ -535,7 +837,7 @@
       "typeVersion": 2,
       "position": [
         500,
-        1300
+        1900
       ],
       "onError": "continueRegularOutput"
     },
@@ -554,7 +856,7 @@
       "typeVersion": 1,
       "position": [
         800,
-        1300
+        1900
       ],
       "credentials": {
         "telegramApi": {
@@ -581,12 +883,12 @@
       "typeVersion": 1,
       "position": [
         200,
-        1450
+        2050
       ]
     },
     {
       "parameters": {
-        "jsCode": "const sd     = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst apps    = (sd.applications || []).filter(a => new Date(a.dateApplied) >= weekAgo);\nconst total   = apps.length;\n\n// Count by status\nconst interviews = apps.filter(a => a.status === 'Interview').length;\nconst responses  = apps.filter(a => a.status !== 'Applied').length;\n\n// Days active this week\nconst activity = sd.dailyActivity || {};\nconst activeDays = Object.keys(activity).filter(d => {\n  const dt = new Date(d);\n  return dt >= weekAgo && (activity[d].applied > 0 || activity[d].analyzed > 0);\n}).length;\n\nlet feedback = '';\nif (total === 0)       feedback = \"⚡ Zero applications this week. That needs to change. Pick 3 companies today and apply.\";\nelse if (total < 5)    feedback = \"Volume is low. Aim for 5+ per week minimum. Quality + quantity both matter.\";\nelse if (total < 10)   feedback = \"Good volume. Focus on SAP BTP and AI roles for highest match rate.\";\nelse                   feedback = \"Strong volume this week. Well done. Stay consistent.\";\n\nconst topCompany = apps.length > 0 ? apps[apps.length - 1].company : 'N/A';\n\nconst text = `📊 *Weekly Review*\n\nApplications: *${total}* | Responses: *${responses}* | Interviews: *${interviews}*\nActive days: ${activeDays}/7\nMost recent: ${topCompany}\n\n${feedback}\n\nNext week target: 5-8 applications. Focus: SAP BTP + Data Analyst + AI Automation roles.`;\n\nreturn [{ json: { text, chatId } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst apps    = (sd.applications || []).filter(a => new Date(a.dateApplied) >= weekAgo);\nconst total   = apps.length;\nconst interviews = apps.filter(a => a.status === 'Interview').length;\nconst responses  = apps.filter(a => a.status !== 'Applied').length;\n\nconst feedback = total === 0 ? \"⚡ Zero applications this week. That needs to change. Pick 3 companies today and apply.\"\n  : total < 5  ? \"Volume is low. Aim for 5+ per week minimum.\"\n  : total < 10 ? \"Good volume. Focus on SAP BTP and AI roles for highest match rate.\"\n  : \"Strong volume this week. Well done. Stay consistent.\";\n\nconst topCompany = apps.length > 0 ? apps[apps.length-1].company : 'N/A';\n\nreturn [{ json: { chatId, text:\n  `📊 *Weekly Review*\n\nApplications: *${total}* | Responses: *${responses}* | Interviews: *${interviews}*\nMost recent: ${topCompany}\n\n${feedback}\n\nNext week target: 5–8 applications. Focus: SAP BTP + Data Analyst + AI Automation.` } }];"
       },
       "id": "hj-29",
       "name": "Build: Weekly Review",
@@ -594,7 +896,7 @@
       "typeVersion": 2,
       "position": [
         500,
-        1450
+        2050
       ],
       "onError": "continueRegularOutput"
     },
@@ -613,7 +915,7 @@
       "typeVersion": 1,
       "position": [
         800,
-        1450
+        2050
       ],
       "credentials": {
         "telegramApi": {
@@ -701,6 +1003,34 @@
         ],
         [
           {
+            "node": "Send: Cover Letter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send: Interview Prep",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send: Skill Gap",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process: Mark Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Send: General Response",
             "type": "main",
             "index": 0
@@ -723,7 +1053,34 @@
       "main": [
         [
           {
+            "node": "Execute: Convert to PDF",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Read: Resume DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute: Convert to PDF": {
+      "main": [
+        [
+          {
+            "node": "Read: Resume PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read: Resume PDF": {
+      "main": [
+        [
+          {
+            "node": "Send: PDF File",
             "type": "main",
             "index": 0
           }
@@ -784,6 +1141,61 @@
         [
           {
             "node": "Send: Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process: Mark Outcome": {
+      "main": [
+        [
+          {
+            "node": "Send: Outcome Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter: Job Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Job Email": {
+      "main": [
+        [
+          {
+            "node": "Claude: Extract Gmail Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude: Extract Gmail Job": {
+      "main": [
+        [
+          {
+            "node": "Parse: Gmail Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse: Gmail Job": {
+      "main": [
+        [
+          {
+            "node": "Send: Gmail Job Alert",
             "type": "main",
             "index": 0
           }
