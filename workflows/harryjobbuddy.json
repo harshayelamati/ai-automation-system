@@ -11,7 +11,7 @@
       "id": "hj-01",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
-      "typeVersion": 1.1,
+      "typeVersion": 1,
       "position": [
         200,
         300
@@ -60,38 +60,15 @@
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "model",
-              "value": "claude-haiku-4-5"
-            },
-            {
-              "name": "max_tokens",
-              "value": "1024"
-            },
-            {
-              "name": "system",
-              "value": "You are HarryJobBuddy — Harsha's personal AI career companion. Not a chatbot. A friend who happens to be a career expert.\n\nABOUT HARSHA:\n- SAP ABAP Developer, 5+ years experience (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\n- Located in Sunnyvale, CA. On OPT visa, needs H1B sponsorship.\n- Master's in Data Analytics, Indiana Wesleyan University, graduated August 2025\n- Built a production 24/7 AI automation system (n8n + Claude API + Oracle Cloud + Telegram)\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst, RPA Developer\n- DO NOT suggest: software engineer, iOS developer, mobile developer, roles requiring coding interviews or CS degrees\n- GitHub: github.com/harshayelamati | LinkedIn: linkedin.com/in/harshayelamati\n\nPERSONALITY MODES (switch automatically):\n- FRIEND MODE: casual chat, daily briefings, motivation. Tone: warm, brief, real. No excessive praise.\n- COACH MODE: job evaluation, resume feedback, decisions. Tone: direct, honest, slightly strict.\n- DRIVER MODE: when urgent high-match job appears OR if inactive >3 days. Tone: action-first, short, commanding.\n\nJOB SCORING:\n- Score 8-10, Class=APPLY NOW: Strong match — skills fit, experience reasonable, real opportunity\n- Score 5-7, Class=MAYBE: Partial match — worth reviewing, has some gaps\n- Score 1-4, Class=SKIP: Weak match, waste of time, bad signal\n\nRULES:\n- Always give a recommendation. Never be neutral.\n- Keep messages SHORT (Telegram = phone screen). Max 200 words per message.\n- Never fabricate skills or experience.\n- Push toward action. Thinking > 1 hour about a job = bad habit.\n- Be honest even when it stings.\n\nINTENT DETECTION:\nAnalyze the user message and return ONE of these intents:\n- analyze_job: user pasted a job description or job URL or asked about a specific job\n- get_resume: user asked for a resume, \"give me resume\", \"update resume\", \"resume for this job\"\n- applied: user said they applied (\"applied to X\", \"I applied\", \"submitted application\")\n- company_info: user asked about a company\n- compare_jobs: user wants to compare two or more jobs\n- status: user asked about their progress, stats, applications count\n- general: anything else (casual chat, questions, motivation, etc.)\n\nALWAYS respond with valid JSON only (no markdown, no other text):\n{\n  \"intent\": \"analyze_job|get_resume|applied|company_info|compare_jobs|status|general\",\n  \"mode\": \"friend|coach|driver\",\n  \"response\": \"Your message to Harsha — short, mobile-friendly, punchy\",\n  \"structured\": null\n}\n\nFor analyze_job, structured = {\n  \"title\": \"job title\",\n  \"company\": \"company name\",\n  \"exp_required\": \"X years\",\n  \"visa_sponsor\": \"Yes/No/Unknown\",\n  \"salary\": \"$X-$Y or Unknown\",\n  \"location\": \"City, State or Remote\",\n  \"link\": \"apply URL or null\",\n  \"score\": 8,\n  \"classification\": \"APPLY NOW\",\n  \"reasoning\": \"1-2 sentence honest assessment\",\n  \"keywords\": [\"BTP\", \"CPI\", \"Integration Suite\"]\n}\n\nFor applied, structured = { \"company\": \"company name\", \"role\": \"job title\" }\nFor get_resume, use last analyzed job context from conversation history. structured = { \"title\": \"role\", \"company\": \"company\", \"keywords\": [\"kw1\", \"kw2\"], \"apply_link\": \"url or null\" }\nFor company_info, structured = null (put the info in response)\nFor general, structured = null"
-            },
-            {
-              "name": "messages",
-              "value": "={{ $json.messages }}"
-            }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 1024, system: \"You are HarryJobBuddy — Harsha's personal AI career companion. Not a chatbot. A friend who happens to be a career expert.\\n\\nABOUT HARSHA:\\n- SAP ABAP Developer, 5+ years experience (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Located in Sunnyvale, CA. On OPT visa, needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University, graduated August 2025\\n- Built a production 24/7 AI automation system (n8n + Claude API + Oracle Cloud + Telegram)\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst, RPA Developer\\n- DO NOT suggest: software engineer, iOS developer, mobile developer, roles requiring coding interviews or CS degrees\\n- GitHub: github.com/harshayelamati | LinkedIn: linkedin.com/in/harshayelamati\\n\\nPERSONALITY MODES (switch automatically):\\n- FRIEND MODE: casual chat, daily briefings, motivation. Tone: warm, brief, real. No excessive praise.\\n- COACH MODE: job evaluation, resume feedback, decisions. Tone: direct, honest, slightly strict.\\n- DRIVER MODE: when urgent high-match job appears OR if inactive >3 days. Tone: action-first, short, commanding.\\n\\nJOB SCORING:\\n- Score 8-10, Class=APPLY NOW: Strong match — skills fit, experience reasonable, real opportunity\\n- Score 5-7, Class=MAYBE: Partial match — worth reviewing, has some gaps\\n- Score 1-4, Class=SKIP: Weak match, waste of time, bad signal\\n\\nRULES:\\n- Always give a recommendation. Never be neutral.\\n- Keep messages SHORT (Telegram = phone screen). Max 200 words per message.\\n- Never fabricate skills or experience.\\n- Push toward action. Thinking > 1 hour about a job = bad habit.\\n- Be honest even when it stings.\\n\\nINTENT DETECTION:\\nAnalyze the user message and return ONE of these intents:\\n- analyze_job: user pasted a job description or job URL or asked about a specific job\\n- get_resume: user asked for a resume, \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this job\\\"\\n- applied: user said they applied (\\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\")\\n- company_info: user asked about a company\\n- compare_jobs: user wants to compare two or more jobs\\n- status: user asked about their progress, stats, applications count\\n- general: anything else (casual chat, questions, motivation, etc.)\\n\\nALWAYS respond with valid JSON only (no markdown, no other text):\\n{\\n  \\\"intent\\\": \\\"analyze_job|get_resume|applied|company_info|compare_jobs|status|general\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver\\\",\\n  \\\"response\\\": \\\"Your message to Harsha — short, mobile-friendly, punchy\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"]\\n}\\n\\nFor applied, structured = { \\\"company\\\": \\\"company name\\\", \\\"role\\\": \\\"job title\\\" }\\nFor get_resume, use last analyzed job context from conversation history. structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\", \\\"kw2\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor company_info, structured = null (put the info in response)\\nFor general, structured = null\", messages: $json.messages }) }}",
+        "options": {}
       },
       "id": "hj-03",
       "name": "Claude: Intent + Response",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
+      "typeVersion": 4,
       "position": [
         700,
         300
@@ -114,88 +91,30 @@
     },
     {
       "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.intent }}",
         "rules": {
           "rules": [
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": false
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.intent }}",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "rightValue": "analyze_job"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "value2": "analyze_job"
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": false
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.intent }}",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "rightValue": "get_resume"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "value2": "get_resume"
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": false
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.intent }}",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "rightValue": "applied"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "value2": "applied"
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": false
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.intent }}",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "rightValue": "status"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "value2": "status"
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "fallbackOutput": 4
       },
       "id": "hj-05",
       "name": "Route: Intent Switch",
       "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
+      "typeVersion": 1,
       "position": [
         1200,
         300
@@ -213,7 +132,7 @@
       "id": "hj-06",
       "name": "Send: Job Analysis",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         1500,
         160
@@ -256,12 +175,11 @@
     },
     {
       "parameters": {
-        "fileSelector": "={{ $('Prep: Resume Build').item.json.outputPath }}",
-        "dataPropertyName": "resumeFile"
+        "filePath": "={{ $('Prep: Resume Build').item.json.outputPath }}"
       },
       "id": "hj-09",
       "name": "Read: Resume DOCX",
-      "type": "n8n-nodes-base.readWriteFile",
+      "type": "n8n-nodes-base.readBinaryFile",
       "typeVersion": 1,
       "position": [
         2000,
@@ -274,7 +192,7 @@
         "operation": "sendDocument",
         "chatId": "={{ $('Prep: Resume Build').item.json.chatId }}",
         "binaryData": true,
-        "binaryPropertyName": "resumeFile",
+        "binaryPropertyName": "data",
         "additionalFields": {
           "caption": "={{ $('Prep: Resume Build').item.json.company }} — Tailored Resume 📄"
         }
@@ -282,7 +200,7 @@
       "id": "hj-10",
       "name": "Send: DOCX File",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         2250,
         260
@@ -321,7 +239,7 @@
       "id": "hj-12",
       "name": "Send: Resume Summary",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         2500,
         400
@@ -392,7 +310,7 @@
       "id": "hj-15",
       "name": "Send: Applied Confirmation",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         2000,
         480
@@ -431,7 +349,7 @@
       "id": "hj-17",
       "name": "Send: Status",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         1750,
         620
@@ -456,7 +374,7 @@
       "id": "hj-18",
       "name": "Send: General Response",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         1500,
         780
@@ -483,7 +401,7 @@
       "id": "hj-19",
       "name": "Schedule: Morning (7AM)",
       "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
+      "typeVersion": 1,
       "position": [
         200,
         1000
@@ -515,7 +433,7 @@
       "id": "hj-21",
       "name": "Send: Morning Briefing",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         800,
         1000
@@ -542,7 +460,7 @@
       "id": "hj-22",
       "name": "Schedule: Evening (8PM)",
       "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
+      "typeVersion": 1,
       "position": [
         200,
         1150
@@ -574,7 +492,7 @@
       "id": "hj-24",
       "name": "Send: Evening Summary",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         800,
         1150
@@ -601,7 +519,7 @@
       "id": "hj-25",
       "name": "Schedule: Follow-Up (9AM)",
       "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
+      "typeVersion": 1,
       "position": [
         200,
         1300
@@ -633,7 +551,7 @@
       "id": "hj-27",
       "name": "Send: Follow-Up Reminder",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         800,
         1300
@@ -660,7 +578,7 @@
       "id": "hj-28",
       "name": "Schedule: Weekly (Sun 10AM)",
       "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
+      "typeVersion": 1,
       "position": [
         200,
         1450
@@ -692,7 +610,7 @@
       "id": "hj-30",
       "name": "Send: Weekly Review",
       "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
+      "typeVersion": 1,
       "position": [
         800,
         1450
