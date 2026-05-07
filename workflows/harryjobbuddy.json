@@ -16,7 +16,7 @@
         200,
         300
       ],
-      "webhookId": "hjb-v2-2026",
+      "webhookId": "hjb-v3-2026",
       "credentials": {
         "telegramApi": {
           "id": "MbAh3dEmqQNH81lF",
