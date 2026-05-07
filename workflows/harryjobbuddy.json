@@ -351,7 +351,7 @@
       "id": "hj-14",
       "name": "Sheets: Log Application",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "typeVersion": 4,
       "position": [
         1750,
         440
@@ -536,7 +536,7 @@
       "id": "hj-34b",
       "name": "Sheets: Log Outcome",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "typeVersion": 4,
       "position": [
         1750,
         1060
@@ -609,12 +609,8 @@
             }
           ]
         },
-        "filters": {
-          "readStatus": "unread"
-        },
-        "options": {
-          "format": "resolved"
-        }
+        "filters": {},
+        "options": {}
       },
       "id": "hj-40",
       "name": "Gmail Trigger",
