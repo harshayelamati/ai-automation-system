@@ -320,7 +320,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { structured, chatId } = $json;\nconst company = structured?.company || 'Unknown Company';\nconst role    = structured?.role    || 'Unknown Role';\nconst today   = new Date().toISOString().split('T')[0];\n\nif (!Array.isArray(sd.applications)) sd.applications = [];\nsd.applications.push({ company, role, dateApplied: today, status: 'Applied' });\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekCount = sd.applications.filter(a => new Date(a.dateApplied) >= weekAgo).length;\nconst followUpDate = new Date(); followUpDate.setDate(followUpDate.getDate() + 7);\nconst followUpStr  = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Logged!* ${role} @ ${company}\\n\\nApplied: Today (${today})\\nFollow-up: ${followUpStr}\\n\\nThis week: ${weekCount} application${weekCount !== 1 ? 's' : ''}. Keep going.`,\n  rowData: { company, role, dateApplied: today, status: 'Applied', source: 'Manual' },\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { structured, chatId } = $json;\nconst company = structured?.company || 'Unknown Company';\nconst role    = structured?.role    || 'Unknown Role';\nconst today   = new Date().toISOString().split('T')[0];\nconst job     = sd.lastAnalyzedJob || {};\n\nif (!Array.isArray(sd.applications)) sd.applications = [];\nsd.applications.push({ company, role, dateApplied: today, status: 'Applied' });\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekCount = sd.applications.filter(a => new Date(a.dateApplied) >= weekAgo).length;\nconst followUpDate = new Date(); followUpDate.setDate(followUpDate.getDate() + 7);\nconst followUpStr  = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Logged!* ${role} @ ${company}\\n\\nApplied: Today (${today})\\nFollow-up: ${followUpStr}\\n\\nThis week: ${weekCount} application${weekCount !== 1 ? 's' : ''}. Keep going.`,\n  rowData: {\n    Company:        company,\n    Role:           role,\n    'Date Applied': today,\n    Status:         'Applied',\n    Source:         'Manual',\n    Score:          job.score          || '',\n    Classification: job.classification || '',\n    'Visa Sponsor': job.visa_sponsor   || '',\n    Salary:         job.salary         || '',\n    Location:       job.location       || '',\n    'Apply Link':   job.link || job.apply_link || '',\n    Keywords:       (job.keywords || []).join(', '),\n    'Outcome Date': '',\n    Notes:          '',\n  },\n} }];"
       },
       "id": "hj-13",
       "name": "Process: Log Applied",
@@ -505,7 +505,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\n\nreturn [{ json: {\n  chatId,\n  text: $json.response,\n  rowData: { company, status: statusLabel, outcomeDate: new Date().toISOString().split('T')[0] },\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\nconst outcomeDate = new Date().toISOString().split('T')[0];\n\nreturn [{ json: {\n  chatId,\n  text: $json.response,\n  rowData: {\n    Company:        company,\n    Role:           sd.applications?.find(a => a.company.toLowerCase().includes(company.toLowerCase()))?.role || '',\n    'New Status':   statusLabel,\n    'Outcome Date': outcomeDate,\n    Notes:          '',\n  },\n} }];"
       },
       "id": "hj-34",
       "name": "Process: Mark Outcome",
@@ -515,6 +515,38 @@
         1500,
         1060
       ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Outcomes",
+          "mode": "name"
+        },
+        "dataMode": "autoMapInputData",
+        "options": {}
+      },
+      "id": "hj-34b",
+      "name": "Sheets: Log Outcome",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1750,
+        1060
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -531,7 +563,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        1750,
+        2000,
         1060
       ],
       "credentials": {
@@ -1148,6 +1180,17 @@
       ]
     },
     "Process: Mark Outcome": {
+      "main": [
+        [
+          {
+            "node": "Sheets: Log Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets: Log Outcome": {
       "main": [
         [
           {
