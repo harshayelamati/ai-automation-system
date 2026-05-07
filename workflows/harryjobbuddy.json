@@ -723,7 +723,7 @@
           "item": [
             {
               "mode": "custom",
-              "value": "0 15 * * *"
+              "cronExpression": "0 15 * * *"
             }
           ]
         }
@@ -782,7 +782,7 @@
           "item": [
             {
               "mode": "custom",
-              "value": "0 4 * * *"
+              "cronExpression": "0 4 * * *"
             }
           ]
         }
@@ -841,7 +841,7 @@
           "item": [
             {
               "mode": "custom",
-              "value": "0 17 * * *"
+              "cronExpression": "0 17 * * *"
             }
           ]
         }
@@ -900,7 +900,7 @@
           "item": [
             {
               "mode": "custom",
-              "value": "0 18 * * 0"
+              "cronExpression": "0 18 * * 0"
             }
           ]
         }
