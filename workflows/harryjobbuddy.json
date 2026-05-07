@@ -19,7 +19,7 @@
       "webhookId": "harryjobbuddy-webhook",
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       }
@@ -151,7 +151,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -247,7 +247,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -273,7 +273,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -312,7 +312,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -337,7 +337,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "value": "1jMjcVnGI3XegpluVf3ti5d4JfnmxgqSeNS4qGomcSyU",
           "mode": "id"
         },
         "sheetName": {
@@ -358,7 +358,7 @@
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "id": "EAasghyp2wdssaUr",
           "name": "Google Sheets account"
         }
       },
@@ -383,7 +383,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -422,7 +422,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -447,7 +447,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -472,7 +472,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -497,7 +497,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -522,7 +522,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "YOUR_JOB_TRACKER_SHEET_ID",
+          "value": "1jMjcVnGI3XegpluVf3ti5d4JfnmxgqSeNS4qGomcSyU",
           "mode": "id"
         },
         "sheetName": {
@@ -543,7 +543,7 @@
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "id": "EAasghyp2wdssaUr",
           "name": "Google Sheets account"
         }
       },
@@ -568,7 +568,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -593,7 +593,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -626,8 +626,8 @@
       ],
       "credentials": {
         "gmailOAuth2": {
-          "id": "YOUR_GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "LI6rQyGpZ6Bivprw",
+          "name": "harryjobbuddy - Gmail account 2"
         }
       }
     },
@@ -715,7 +715,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -774,7 +774,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -833,7 +833,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -892,7 +892,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
@@ -951,7 +951,7 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "YOUR_HARRYJOBBUDDY_TELEGRAM_CRED_ID",
+          "id": "MbAh3dEmqQNH81lF",
           "name": "HarryJobBuddy Bot"
         }
       },
