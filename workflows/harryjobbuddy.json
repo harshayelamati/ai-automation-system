@@ -719,11 +719,11 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
+        "triggerTimes": {
+          "item": [
             {
-              "field": "cronExpression",
-              "expression": "0 15 * * *"
+              "mode": "custom",
+              "value": "0 15 * * *"
             }
           ]
         }
@@ -778,11 +778,11 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
+        "triggerTimes": {
+          "item": [
             {
-              "field": "cronExpression",
-              "expression": "0 4 * * *"
+              "mode": "custom",
+              "value": "0 4 * * *"
             }
           ]
         }
@@ -837,11 +837,11 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
+        "triggerTimes": {
+          "item": [
             {
-              "field": "cronExpression",
-              "expression": "0 17 * * *"
+              "mode": "custom",
+              "value": "0 17 * * *"
             }
           ]
         }
@@ -896,11 +896,11 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
+        "triggerTimes": {
+          "item": [
             {
-              "field": "cronExpression",
-              "expression": "0 18 * * 0"
+              "mode": "custom",
+              "value": "0 18 * * 0"
             }
           ]
         }
@@ -1334,9 +1334,5 @@
   "settings": {
     "timezone": "America/Los_Angeles",
     "executionOrder": "v1"
-  },
-  "tags": [
-    "job-search",
-    "harryjobbuddy"
-  ]
+  }
 }
