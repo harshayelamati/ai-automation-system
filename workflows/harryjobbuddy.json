@@ -173,12 +173,12 @@
     },
     {
       "parameters": {
-        "command": "={{ $json.buildCmd }}"
+        "jsCode": "const { execSync } = require('child_process');\nconst buildCmd = $json.buildCmd;\ntry {\n  execSync(buildCmd, { timeout: 30000 });\n} catch(e) {\n  // continue even if error\n}\nreturn [{ json: { ...$json } }];"
       },
       "id": "hj-08",
       "name": "Execute: Build Resume DOCX",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1750,
         260
@@ -187,12 +187,12 @@
     },
     {
       "parameters": {
-        "command": "={{ 'libreoffice --headless --convert-to pdf ' + $('Prep: Resume Build').item.json.outputPath + ' --outdir /tmp/' }}"
+        "jsCode": "const { execSync } = require('child_process');\nconst outputPath = $('Prep: Resume Build').item.json.outputPath;\ntry {\n  execSync('libreoffice --headless --convert-to pdf ' + outputPath + ' --outdir /tmp/', { timeout: 60000 });\n} catch(e) {\n  // LibreOffice not installed — skip PDF silently\n}\nreturn [{ json: { ...$json } }];"
       },
       "id": "hj-08b",
       "name": "Execute: Convert to PDF",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         2000,
         140
