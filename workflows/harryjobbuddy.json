@@ -16,7 +16,7 @@
         200,
         300
       ],
-      "webhookId": "hjb-v3-2026",
+      "webhookId": "hjb-v4-2026",
       "credentials": {
         "telegramApi": {
           "id": "MbAh3dEmqQNH81lF",
@@ -723,7 +723,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 15 * * *"
+              "cronExpression": "0 0 15 * * *"
             }
           ]
         }
@@ -782,7 +782,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 4 * * *"
+              "cronExpression": "0 0 4 * * *"
             }
           ]
         }
@@ -841,7 +841,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 17 * * *"
+              "cronExpression": "0 0 17 * * *"
             }
           ]
         }
@@ -900,7 +900,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 18 * * 0"
+              "cronExpression": "0 0 18 * * 0"
             }
           ]
         }
