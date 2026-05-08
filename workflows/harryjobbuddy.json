@@ -723,7 +723,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 0 15 * * *"
+              "expression": "0 15 * * *"
             }
           ]
         }
@@ -782,7 +782,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 0 4 * * *"
+              "expression": "0 4 * * *"
             }
           ]
         }
@@ -841,7 +841,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 0 17 * * *"
+              "expression": "0 17 * * *"
             }
           ]
         }
@@ -900,7 +900,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "cronExpression": "0 0 18 * * 0"
+              "expression": "0 18 * * 0"
             }
           ]
         }
