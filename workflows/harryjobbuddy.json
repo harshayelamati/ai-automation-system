@@ -719,10 +719,10 @@
     },
     {
       "parameters": {
-        "triggerTimes": {
-          "item": [
+        "rule": {
+          "interval": [
             {
-              "mode": "custom",
+              "field": "cronExpression",
               "cronExpression": "0 15 * * *"
             }
           ]
@@ -778,10 +778,10 @@
     },
     {
       "parameters": {
-        "triggerTimes": {
-          "item": [
+        "rule": {
+          "interval": [
             {
-              "mode": "custom",
+              "field": "cronExpression",
               "cronExpression": "0 4 * * *"
             }
           ]
@@ -837,10 +837,10 @@
     },
     {
       "parameters": {
-        "triggerTimes": {
-          "item": [
+        "rule": {
+          "interval": [
             {
-              "mode": "custom",
+              "field": "cronExpression",
               "cronExpression": "0 17 * * *"
             }
           ]
@@ -896,10 +896,10 @@
     },
     {
       "parameters": {
-        "triggerTimes": {
-          "item": [
+        "rule": {
+          "interval": [
             {
-              "mode": "custom",
+              "field": "cronExpression",
               "cronExpression": "0 18 * * 0"
             }
           ]
