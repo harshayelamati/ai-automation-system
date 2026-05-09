@@ -300,7 +300,7 @@
         "conditions": {
           "boolean": [
             {
-              "value1": "={{ $json.nodeFound && $json.buildStdout.trim().length > 0 }}",
+              "value1": "={{ $json.nodeFound && ($json.buildStdout || '').trim().length > 0 }}",
               "value2": true
             }
           ]

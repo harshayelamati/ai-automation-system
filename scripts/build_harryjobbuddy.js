@@ -1248,7 +1248,7 @@ return [{ json: { ...$json } }];
   // IF: resume build succeeded
   {
     parameters: {
-      conditions: { boolean: [{ value1: "={{ $json.nodeFound && $json.buildStdout.trim().length > 0 }}", value2: true }] },
+      conditions: { boolean: [{ value1: "={{ $json.nodeFound && ($json.buildStdout || '').trim().length > 0 }}", value2: true }] },
     },
     id: "hj-08c", name: "IF: build success",
     type: "n8n-nodes-base.if", typeVersion: 1,
