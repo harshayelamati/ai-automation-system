@@ -22,7 +22,7 @@ const path = require('path');
 const TELEGRAM_CRED      = { id: "MbAh3dEmqQNH81lF", name: "HarryJobBuddy Bot" };
 const GOOGLE_SHEETS_CRED = { id: "EAasghyp2wdssaUr", name: "Google Sheets account" };
 const GMAIL_CRED         = { id: "LI6rQyGpZ6Bivprw", name: "harryjobbuddy - Gmail account 2" };
-const GOOGLE_SHEET_ID    = "1jMjcVnGI3XegpluVf3ti5d4JfnmxgqSeNS4qGomcSyU";
+const GOOGLE_SHEET_ID    = "1Fqfbe4BfXzHyOqdNWCG80emyAY9jntnEdt0oNl2xCcQ";
 const SCRIPTS_DIR        = "/home/ubuntu/job-scripts";
 const ANTHROPIC_API_KEY  = "YOUR_ANTHROPIC_API_KEY_HERE";
 
