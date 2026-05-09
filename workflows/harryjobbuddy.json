@@ -77,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || $json.choices?.[0]?.message?.content || '';\n\nlet parsed;\ntry {\n  // Try full parse first (clean markdown fences)\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) {\n  // Claude sometimes adds text after the JSON — extract just the JSON object\n  try {\n    const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      parsed = JSON.parse(jsonMatch[0]);\n    } else {\n      throw new Error('no JSON found');\n    }\n  } catch(e2) {\n    parsed = { intent: 'general', mode: 'friend', response: raw || 'Sorry, something went wrong. Try again.', structured: null };\n  }\n}\n\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'assistant', content: parsed.response });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\nif (parsed.intent === 'analyze_job' && parsed.structured) {\n  sd.lastAnalyzedJob = parsed.structured;\n}\n\nconst today = new Date().toDateString();\nif (!sd.dailyActivity)        sd.dailyActivity = {};\nif (!sd.dailyActivity[today]) sd.dailyActivity[today] = { analyzed: 0, applied: 0, lastActive: Date.now() };\nif (parsed.intent === 'analyze_job') sd.dailyActivity[today].analyzed++;\nif (parsed.intent === 'applied')     sd.dailyActivity[today].applied++;\nsd.dailyActivity[today].lastActive = Date.now();\n\nconst days = Object.keys(sd.dailyActivity);\nif (days.length > 30) {\n  sd.dailyActivity = Object.fromEntries(days.sort().slice(-30).map(d => [d, sd.dailyActivity[d]]));\n}\n\nconst chatId  = $('Process Message').item.json.chatId;\nconst lastJob = sd.lastAnalyzedJob || null;\n\n// For analyze_job, build a nicely formatted card instead of raw response\nif (parsed.intent === 'analyze_job' && parsed.structured) {\n  const s = parsed.structured;\n  const icon = s.score >= 8 ? '🟢' : s.score >= 5 ? '🟡' : '🔴';\n  const classLabel = s.classification || (s.score >= 8 ? 'APPLY NOW' : s.score >= 5 ? 'MAYBE' : 'SKIP');\n  const applyLine  = s.link ? `\\n🔗 Apply: ${s.link}` : '';\n  const missingLine = s.missing_skills?.length ? `\\n⚡ Gaps: ${s.missing_skills.slice(0,2).join(', ')}` : '';\n  const atsLine    = s.ats_score ? `\\n📊 ATS Match: ${s.ats_score}%` : '';\n\n  const formattedResponse = `${icon} *${classLabel}* — Score: ${s.score}/10\n\n💼 *${s.title}* @ ${s.company}\n📍 ${s.location || 'N/A'} | 💰 ${s.salary || 'Unknown'} | 🛂 H1B: ${s.visa_sponsor || 'Unknown'}\n⏳ Exp: ${s.exp_required || 'N/A'}${atsLine}${missingLine}${applyLine}\n\n${parsed.response}\n\n👉 Reply *\"resume\"* for your tailored CV or *\"cover letter\"* to draft one.`;\n\n  parsed.response = formattedResponse;\n}\n\n// Inject saved-preferences indicators into job analysis card\nif (parsed.intent === 'analyze_job' && parsed.structured && sd.preferences) {\n  const p = sd.preferences;\n  const s = parsed.structured;\n  const title = (s.title || '').toLowerCase();\n  const loc   = (s.location || '').toLowerCase();\n  const prefNotes = [];\n\n  if (p.role_priorities) {\n    for (const [role, tier] of Object.entries(p.role_priorities)) {\n      if (title.includes(role.toLowerCase())) {\n        prefNotes.push(tier === 1 ? '⭐ Tier 1 priority match (' + role + ')' : '📌 Tier ' + tier + ' match (' + role + ')');\n        break;\n      }\n    }\n  }\n  if (p.location_pref === 'remote' && !loc.includes('remote')) {\n    prefNotes.push('⚠️ Not listed as remote — verify before applying');\n  }\n  if (p.excluded_locations?.some(ex => loc.includes(ex.toLowerCase()))) {\n    prefNotes.push('🚫 Excluded location — flagged by your preferences');\n  }\n  if (p.salary_min) {\n    const salNum = parseFloat((s.salary || '').replace(/[^0-9]/g, '')) || 0;\n    if (salNum > 0 && salNum < p.salary_min) {\n      prefNotes.push('⚠️ Below salary floor ($' + p.salary_min.toLocaleString() + ')');\n    }\n  }\n  if (prefNotes.length > 0) {\n    parsed.response = parsed.response + '\n\n' + prefNotes.join('\n');\n  }\n}\n\nreturn [{ json: { ...parsed, chatId, lastJob } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || $json.choices?.[0]?.message?.content || '';\n\nlet parsed;\ntry {\n  // Try full parse first (clean markdown fences)\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) {\n  // Claude sometimes adds text after the JSON — extract just the JSON object\n  try {\n    const jsonMatch = raw.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      parsed = JSON.parse(jsonMatch[0]);\n    } else {\n      throw new Error('no JSON found');\n    }\n  } catch(e2) {\n    parsed = { intent: 'general', mode: 'friend', response: raw || 'Sorry, something went wrong. Try again.', structured: null };\n  }\n}\n\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'assistant', content: parsed.response });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\nif (parsed.intent === 'analyze_job' && parsed.structured) {\n  sd.lastAnalyzedJob = parsed.structured;\n}\n\nconst today = new Date().toDateString();\nif (!sd.dailyActivity)        sd.dailyActivity = {};\nif (!sd.dailyActivity[today]) sd.dailyActivity[today] = { analyzed: 0, applied: 0, lastActive: Date.now() };\nif (parsed.intent === 'analyze_job') sd.dailyActivity[today].analyzed++;\nif (parsed.intent === 'applied')     sd.dailyActivity[today].applied++;\nsd.dailyActivity[today].lastActive = Date.now();\n\nconst days = Object.keys(sd.dailyActivity);\nif (days.length > 30) {\n  sd.dailyActivity = Object.fromEntries(days.sort().slice(-30).map(d => [d, sd.dailyActivity[d]]));\n}\n\nconst chatId  = $('Process Message').item.json.chatId;\nconst lastJob = sd.lastAnalyzedJob || null;\n\n// For analyze_job, build a nicely formatted card instead of raw response\nif (parsed.intent === 'analyze_job' && parsed.structured) {\n  const s = parsed.structured;\n  const icon = s.score >= 8 ? '🟢' : s.score >= 5 ? '🟡' : '🔴';\n  const classLabel = s.classification || (s.score >= 8 ? 'APPLY NOW' : s.score >= 5 ? 'MAYBE' : 'SKIP');\n  const applyLine  = s.link ? `\\n🔗 Apply: ${s.link}` : '';\n  const missingLine = s.missing_skills?.length ? `\\n⚡ Gaps: ${s.missing_skills.slice(0,2).join(', ')}` : '';\n  const atsLine    = s.ats_score ? `\\n📊 ATS Match: ${s.ats_score}%` : '';\n\n  const formattedResponse = `${icon} *${classLabel}* — Score: ${s.score}/10\n\n💼 *${s.title}* @ ${s.company}\n📍 ${s.location || 'N/A'} | 💰 ${s.salary || 'Unknown'} | 🛂 H1B: ${s.visa_sponsor || 'Unknown'}\n⏳ Exp: ${s.exp_required || 'N/A'}${atsLine}${missingLine}${applyLine}\n\n${parsed.response}\n\n👉 Reply *\"resume\"* for your tailored CV or *\"cover letter\"* to draft one.`;\n\n  parsed.response = formattedResponse;\n}\n\n// Inject saved-preferences indicators into job analysis card\nif (parsed.intent === 'analyze_job' && parsed.structured && sd.preferences) {\n  const p = sd.preferences;\n  const s = parsed.structured;\n  const title = (s.title || '').toLowerCase();\n  const loc   = (s.location || '').toLowerCase();\n  const prefNotes = [];\n\n  if (p.role_priorities) {\n    for (const [role, tier] of Object.entries(p.role_priorities)) {\n      if (title.includes(role.toLowerCase())) {\n        prefNotes.push(tier === 1 ? '⭐ Tier 1 priority match (' + role + ')' : '📌 Tier ' + tier + ' match (' + role + ')');\n        break;\n      }\n    }\n  }\n  if (p.location_pref === 'remote' && !loc.includes('remote')) {\n    prefNotes.push('⚠️ Not listed as remote — verify before applying');\n  }\n  if (p.excluded_locations?.some(ex => loc.includes(ex.toLowerCase()))) {\n    prefNotes.push('🚫 Excluded location — flagged by your preferences');\n  }\n  if (p.salary_min) {\n    const salRaw = (s.salary || '');\n    const salMatch = salRaw.match(/$([d,]+)(k)?/i);\n    const salNum = salMatch ? parseFloat(salMatch[1].replace(/,/g,'')) * (salMatch[2] ? 1000 : 1) : 0;\n    if (salNum > 0 && salNum < p.salary_min) {\n      prefNotes.push('⚠️ Below salary floor ($' + p.salary_min.toLocaleString() + ')');\n    }\n  }\n  if (prefNotes.length > 0) {\n    parsed.response = parsed.response + '\n\n' + prefNotes.join('\n');\n  }\n}\n\nreturn [{ json: { ...parsed, chatId, lastJob } }];"
       },
       "id": "hj-04",
       "name": "Parse Claude Response",
@@ -210,7 +210,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd  = $getWorkflowStaticData('global');\n// Prefer lastJob/static data (clean from analyze_job) — Claude's get_resume structured\n// output sometimes adds \"(or target company)\" noise to company names\nconst job = $json.lastJob || sd.lastAnalyzedJob || $json.structured || null;\n\nif (!job || (!job.company && !job.title)) {\n  return [{ json: {\n    chatId:  $json.chatId || sd.chatId,\n    text:    \"⚠️ No job analyzed yet\\. Paste a job description first, then say *\\\"resume\\\"* and I'll build a tailored CV for it\\.\",\n    noJob:   true,\n    buildCmd: null,\n    outputPath: null,\n  }}];\n}\n\nconst company   = (job.company || 'Company').replace(/[^a-zA-Z0-9]/g,'_');\nconst role      = job.title    || 'SAP Consultant';\nconst keywords  = (job.keywords || []).join(', ');\nconst applyLink = job.link || job.apply_link || null;\nconst expReq    = job.exp_required || 'Not specified';\n\nconst kw = keywords || 'SAP BTP, S/4HANA, OData, RICEF';\nconst tailoredSummary =\n  `SAP ABAP developer with 5+ years of hands-on experience building enterprise integrations, \\\nOData services, RICEF objects, and S/4HANA solutions for global clients. \\\nStrong foundation in ${kw} — with real delivery experience across SD, MM, and BW landscapes. \\\nBuilt a production AI automation system from scratch (n8n + Claude API + Oracle Cloud, running 24/7), \\\nwhich sharpened hands-on skills in REST APIs, event-driven workflows, and cloud-native thinking — \\\nthe same patterns that power SAP BTP and Integration Suite. \\\nMaster's in Data Analytics, Indiana Wesleyan University (2025). Based in Sunnyvale, CA. Seeking H1B sponsorship.`;\n\nconst dateStamp  = new Date().toISOString().split('T')[0];\nconst outputPath = `/root/.n8n-files/HarshaYelamati_${company}_${dateStamp}.docx`;\nconst pdfPath    = `/root/.n8n-files/HarshaYelamati_${company}_${dateStamp}.pdf`;\n\nconst ctx = JSON.stringify({\n  summary:    tailoredSummary,\n  company:    job.company || 'Company',\n  role,\n  keywords:   job.keywords || [],\n  outputPath,\n});\n\n// Store for LOG_APPLIED to reference which resume version was sent\nsd.lastResumeGenerated = { company: job.company || 'Company', role, path: outputPath, date: dateStamp };\n\nreturn [{ json: {\n  buildCmd:   `node /home/ubuntu/job-scripts/build_resume_dynamic.js '${ctx.replace(/'/g, \"'\\\\''\")}'`,\n  outputPath,\n  pdfPath,\n  company:    job.company || 'Company',\n  role, keywords, applyLink, expReq,\n  chatId: $json.chatId || sd.chatId,\n} }];"
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\n// Prefer lastJob/static data (clean from analyze_job) — Claude's get_resume structured\n// output sometimes adds \"(or target company)\" noise to company names\nconst job = $json.lastJob || sd.lastAnalyzedJob || $json.structured || null;\n\nif (!job || (!job.company && !job.title)) {\n  return [{ json: {\n    chatId:  $json.chatId || sd.chatId,\n    text:    \"⚠️ No job analyzed yet\\. Paste a job description first, then say *\\\"resume\\\"* and I'll build a tailored CV for it\\.\",\n    noJob:   true,\n    buildCmd: null,\n    outputPath: null,\n  }}];\n}\n\nconst company   = (job.company || 'Company').replace(/[^a-zA-Z0-9]/g,'_');\nconst role      = job.title    || 'SAP Consultant';\nconst keywords  = (job.keywords || []).join(', ');\nconst applyLink = job.link || job.apply_link || null;\nconst expReq    = job.exp_required || 'Not specified';\n\nconst kw = keywords || 'SAP BTP, S/4HANA, OData, RICEF';\nconst tailoredSummary =\n  `SAP ABAP developer with 5+ years of hands-on experience building enterprise integrations, \\\nOData services, RICEF objects, and S/4HANA solutions for global clients. \\\nStrong foundation in ${kw} — with real delivery experience across SD, MM, and BW landscapes. \\\nBuilt a production AI automation system from scratch (n8n + Claude API + Oracle Cloud, running 24/7), \\\nwhich sharpened hands-on skills in REST APIs, event-driven workflows, and cloud-native thinking — \\\nthe same patterns that power SAP BTP and Integration Suite. \\\nMaster's in Data Analytics, Indiana Wesleyan University (2025). Based in Sunnyvale, CA. Seeking H1B sponsorship.`;\n\nconst dateStamp  = new Date().toISOString().split('T')[0];\nconst outputPath = `/home/ubuntu/n8n-files/HarshaYelamati_${company}_${dateStamp}.docx`;\nconst pdfPath    = `/home/ubuntu/n8n-files/HarshaYelamati_${company}_${dateStamp}.pdf`;\n\nconst ctx = JSON.stringify({\n  summary:    tailoredSummary,\n  company:    job.company || 'Company',\n  role,\n  keywords:   job.keywords || [],\n  outputPath,\n});\n\n// Store for LOG_APPLIED to reference which resume version was sent\nsd.lastResumeGenerated = { company: job.company || 'Company', role, path: outputPath, date: dateStamp };\n\nreturn [{ json: {\n  buildCmd:   `node /home/ubuntu/job-scripts/build_resume_dynamic.js '${ctx.replace(/'/g, \"'\\\\''\")}'`,\n  outputPath,\n  pdfPath,\n  company:    job.company || 'Company',\n  role, keywords, applyLink, expReq,\n  chatId: $json.chatId || sd.chatId,\n} }];"
       },
       "id": "hj-07",
       "name": "Prep: Resume Build",
@@ -269,7 +269,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { execSync } = require('child_process');\nconst rawCmd = $json.buildCmd;\nlet buildStdout = '', buildStderr = '', nodeFound = false;\n\nconst candidates = ['node', '/usr/local/bin/node', '/usr/bin/node',\n  '/root/.nvm/current/bin/node', '/root/.nvm/versions/node/v18/bin/node',\n  '/root/.nvm/versions/node/v20/bin/node', '/root/.nvm/versions/node/v22/bin/node'];\n\nfor (const bin of candidates) {\n  const cmd = rawCmd.replace(/^node /, '\"' + bin + '\" ');\n  try {\n    buildStdout = execSync(cmd, { timeout: 60000, cwd: '/home/ubuntu/job-scripts' }).toString();\n    nodeFound = true;\n    break;\n  } catch(e) {\n    buildStderr = (e.stderr?.toString() || e.message || '').slice(0, 600);\n  }\n}\nreturn [{ json: { ...$json, buildStdout, buildStderr, nodeFound } }];"
+        "jsCode": "const { execSync } = require('child_process');\nconst rawCmd = $json.buildCmd;\nlet buildStdout = '', buildStderr = '', nodeFound = false;\n\n// Find actual node binary first\nlet nodeBin = 'node';\ntry { nodeBin = execSync('which node || which nodejs', { timeout: 5000 }).toString().trim().split('\\n')[0]; } catch(e) {}\n\nconst candidates = [nodeBin, 'node', '/usr/local/bin/node', '/usr/bin/node', '/usr/bin/nodejs',\n  '/home/ubuntu/.nvm/current/bin/node', '/home/ubuntu/.nvm/versions/node/v18/bin/node',\n  '/home/ubuntu/.nvm/versions/node/v20/bin/node', '/home/ubuntu/.nvm/versions/node/v22/bin/node'];\n\nfor (const bin of [...new Set(candidates)]) {\n  const cmd = rawCmd.replace(/^node /, '\"' + bin + '\" ');\n  try {\n    buildStdout = execSync(cmd, { timeout: 60000, cwd: '/home/ubuntu/job-scripts' }).toString();\n    nodeFound = true;\n    break;\n  } catch(e) {\n    buildStderr = (e.stderr?.toString() || e.message || '').slice(0, 600);\n  }\n}\nreturn [{ json: { ...$json, buildStdout, buildStderr, nodeFound } }];"
       },
       "id": "hj-08",
       "name": "Execute: Build Resume DOCX",
@@ -283,7 +283,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { execSync } = require('child_process');\nconst outputPath = $('Prep: Resume Build').item.json.outputPath;\ntry {\n  execSync('libreoffice --headless --convert-to pdf \"' + outputPath + '\" --outdir /root/.n8n-files/', { timeout: 60000 });\n} catch(e) { /* LibreOffice not installed — skip */ }\nreturn [{ json: { ...$json } }];"
+        "jsCode": "const { execSync } = require('child_process');\nconst outputPath = $('Prep: Resume Build').item.json.outputPath;\ntry {\n  execSync('libreoffice --headless --convert-to pdf \"' + outputPath + '\" --outdir /home/ubuntu/n8n-files/', { timeout: 60000 });\n} catch(e) { /* LibreOffice not installed — skip */ }\nreturn [{ json: { ...$json } }];"
       },
       "id": "hj-08b",
       "name": "Execute: Convert to PDF",
@@ -297,6 +297,66 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.nodeFound && $json.buildStdout.trim().length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "hj-08c",
+      "name": "IF: build success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        260
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId = $('Prep: Resume Build').item.json.chatId;\nconst err = ($json.buildStderr || 'Unknown error').slice(0, 200);\nconst nodeMsg = $json.nodeFound ? '' : '\\n⚠️ Node.js binary not found on server.';\nreturn [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nError: ' + err + '\\n\\nCheck that `build_resume_dynamic.js` and `docx` package are installed on the server.' } }];"
+      },
+      "id": "hj-08d",
+      "name": "Format: Build Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2250,
+        140
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-08e",
+      "name": "Send: Build Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2500,
+        140
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "filePath": "={{ $('Prep: Resume Build').item.json.outputPath }}"
       },
       "id": "hj-09",
@@ -304,8 +364,8 @@
       "type": "n8n-nodes-base.readBinaryFile",
       "typeVersion": 1,
       "position": [
-        2000,
-        300
+        2250,
+        320
       ],
       "onError": "continueRegularOutput"
     },
@@ -416,7 +476,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { structured, chatId } = $json;\nconst company = structured?.company || 'Unknown Company';\nconst role    = structured?.role    || 'Unknown Role';\nconst today   = new Date().toISOString().split('T')[0];\nconst job     = sd.lastAnalyzedJob || {};\n\nif (!Array.isArray(sd.applications)) sd.applications = [];\nsd.applications.push({ company, role, dateApplied: today, status: 'Applied' });\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekCount = sd.applications.filter(a => new Date(a.dateApplied) >= weekAgo).length;\nconst followUpDate = new Date(); followUpDate.setDate(followUpDate.getDate() + 7);\nconst followUpStr  = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n\nconst resumeVersion = sd.lastResumeGenerated\n  ? `${sd.lastResumeGenerated.company}_${sd.lastResumeGenerated.date}`\n  : '';\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Logged!* ${role} @ ${company}\\n\\nApplied: Today (${today})\\nFollow-up: ${followUpStr}\\n\\nThis week: ${weekCount} application${weekCount !== 1 ? 's' : ''}. Keep going.`,\n  rowData: {\n    Company:          company,\n    Role:             role,\n    'Date Applied':   today,\n    Status:           'Applied',\n    Source:           'Manual',\n    Score:            job.score          || '',\n    Classification:   job.classification || '',\n    'Visa Sponsor':   job.visa_sponsor   || '',\n    Salary:           job.salary         || '',\n    Location:         job.location       || '',\n    'Apply Link':     job.link || job.apply_link || '',\n    Keywords:         (job.keywords || []).join(', '),\n    'Resume Version': resumeVersion,\n    'Outcome Date':   '',\n    Notes:            '',\n  },\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst { structured, chatId } = $json;\nconst company = structured?.company || 'Unknown Company';\nconst role    = structured?.role    || 'Unknown Role';\nconst today   = new Date().toISOString().split('T')[0];\nconst job     = sd.lastAnalyzedJob || {};\n\nif (!Array.isArray(sd.applications)) sd.applications = [];\nsd.applications.push({ company, role, dateApplied: today, status: 'Applied' });\n\nconst weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);\nconst weekCount = sd.applications.filter(a => new Date(a.dateApplied) >= weekAgo).length;\nconst followUpDate = new Date(); followUpDate.setDate(followUpDate.getDate() + 7);\nconst followUpStr  = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });\n\nconst resumeVersion = sd.lastResumeGenerated\n  ? `${sd.lastResumeGenerated.company}_${sd.lastResumeGenerated.date}`\n  : '';\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Logged!* ${role} @ ${company}\\n\\nApplied: Today (${today})\\nFollow-up: ${followUpStr}\\n\\nThis week: ${weekCount} application${weekCount !== 1 ? 's' : ''}. Keep going.`,\n  // Spread rowData flat so Sheets autoMapInputData writes correct columns\n  Company:          company,\n  Role:             role,\n  'Date Applied':   today,\n  Status:           'Applied',\n  Source:           'Manual',\n  Score:            job.score          || '',\n  Classification:   job.classification || '',\n  'Visa Sponsor':   job.visa_sponsor   || '',\n  Salary:           job.salary         || '',\n  Location:         job.location       || '',\n  'Apply Link':     job.link || job.apply_link || '',\n  Keywords:         (job.keywords || []).join(', '),\n  'Resume Version': resumeVersion,\n  'Outcome Date':   '',\n  Notes:            '',\n} }];"
       },
       "id": "hj-13",
       "name": "Process: Log Applied",
@@ -540,7 +600,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\nconst stage   = structured.stage   || null;\n\nconst stageEmoji = { phone_screen: '📞', take_home: '📝', onsite: '🏢', final_round: '🎯', offer: '💰' };\nconst stageLabel = { phone_screen: 'Phone Screen', take_home: 'Take-Home', onsite: 'Onsite', final_round: 'Final Round', offer: 'Offer' };\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n    if (stage) app.stage = stage;\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\nconst outcomeDate = new Date().toISOString().split('T')[0];\nconst stagePart   = stage ? `\\n🔖 Stage: ${stageEmoji[stage] || ''} ${stageLabel[stage] || stage.replace(/_/g,' ')}` : '';\nconst matchedApp  = sd.applications?.find(a => a.company.toLowerCase().includes(company.toLowerCase()));\n\n// Build confirmation text (use Claude's response + stage info)\nconst text = $json.response + stagePart;\n\nreturn [{ json: {\n  chatId,\n  text,\n  rowData: {\n    Company:        company,\n    Role:           matchedApp?.role || '',\n    'New Status':   statusLabel,\n    Stage:          stage ? (stageLabel[stage] || stage) : '',\n    'Outcome Date': outcomeDate,\n    Notes:          '',\n  },\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\nconst stage   = structured.stage   || null;\n\nconst stageEmoji = { phone_screen: '📞', take_home: '📝', onsite: '🏢', final_round: '🎯', offer: '💰' };\nconst stageLabel = { phone_screen: 'Phone Screen', take_home: 'Take-Home', onsite: 'Onsite', final_round: 'Final Round', offer: 'Offer' };\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n    if (stage) app.stage = stage;\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\nconst outcomeDate = new Date().toISOString().split('T')[0];\nconst stagePart   = stage ? `\\n🔖 Stage: ${stageEmoji[stage] || ''} ${stageLabel[stage] || stage.replace(/_/g,' ')}` : '';\nconst matchedApp  = sd.applications?.find(a => a.company.toLowerCase().includes(company.toLowerCase()));\n\n// Build confirmation text (use Claude's response + stage info)\nconst text = ($json.response || 'Outcome logged.') + stagePart;\n\n// Also add to sd.applications if company wasn't previously tracked\nif (!matchedApp && Array.isArray(sd.applications)) {\n  const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n  sd.applications.push({ company, role: '', dateApplied: outcomeDate, status: statusMap[outcome] || outcome, outcomeDate, stage: stage || null });\n}\n\nreturn [{ json: {\n  chatId,\n  text,\n  // Spread flat for Sheets autoMapInputData\n  Company:        company,\n  Role:           matchedApp?.role || '',\n  'New Status':   statusLabel,\n  Stage:          stage ? (stageLabel[stage] || stage) : '',\n  'Outcome Date': outcomeDate,\n  Notes:          '',\n} }];"
       },
       "id": "hj-34",
       "name": "Process: Mark Outcome",
@@ -829,7 +889,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || '';\n\nlet parsed;\ntry {\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) { return []; }\n\nif (!parsed.is_job) return [];\n\nconst jobKey = `${(parsed.title||'').toLowerCase()}_${(parsed.company||'').toLowerCase()}`;\nif (!Array.isArray(sd.seenGmailJobs)) sd.seenGmailJobs = [];\nif (sd.seenGmailJobs.includes(jobKey)) return [];\nsd.seenGmailJobs.push(jobKey);\nif (sd.seenGmailJobs.length > 500) sd.seenGmailJobs = sd.seenGmailJobs.slice(-500);\n\nsd.lastAnalyzedJob = {\n  title: parsed.title, company: parsed.company,\n  link: parsed.apply_link, apply_link: parsed.apply_link,\n  keywords: parsed.keywords || [], exp_required: parsed.exp_required,\n  visa_sponsor: parsed.visa_sponsor, salary: parsed.salary,\n  location: parsed.location, score: parsed.score,\n  classification: parsed.classification,\n};\n\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nreturn [{ json: {\n  chatId,\n  text: parsed.alert_text || `📨 New job: ${parsed.title} @ ${parsed.company}\\n⭐ ${parsed.score}/10 — ${parsed.classification}`,\n} }];"
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || '';\n\nlet parsed;\ntry {\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) { return []; }\n\nif (!parsed.is_job) return [];\n\nconst jobKey = `${(parsed.title||'').toLowerCase()}_${(parsed.company||'').toLowerCase()}`;\nif (!Array.isArray(sd.seenGmailJobs)) sd.seenGmailJobs = [];\nif (sd.seenGmailJobs.includes(jobKey)) return [];\nsd.seenGmailJobs.push(jobKey);\nif (sd.seenGmailJobs.length > 500) sd.seenGmailJobs = sd.seenGmailJobs.slice(-500);\n\nconst jobData = {\n  title: parsed.title, company: parsed.company,\n  link: parsed.apply_link, apply_link: parsed.apply_link,\n  keywords: parsed.keywords || [], exp_required: parsed.exp_required,\n  visa_sponsor: parsed.visa_sponsor, salary: parsed.salary,\n  location: parsed.location, score: parsed.score,\n  classification: parsed.classification,\n  source: 'Gmail',\n};\n\nsd.lastAnalyzedJob = jobData;\n\n// Feed morning briefing digest queue\nif (!Array.isArray(sd.digestQueue)) sd.digestQueue = [];\nsd.digestQueue.push(jobData);\nif (sd.digestQueue.length > 20) sd.digestQueue = sd.digestQueue.slice(-20);\n\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nreturn [{ json: {\n  chatId,\n  text: parsed.alert_text || `📨 New job: ${parsed.title} @ ${parsed.company}\\n⭐ ${parsed.score}/10 — ${parsed.classification}`,\n} }];"
       },
       "id": "hj-g4",
       "name": "Parse: Gmail Job Response",
@@ -888,7 +948,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\nif (sd.pausedUntil && new Date() < new Date(sd.pausedUntil)) return [];\n\nconst queue = (sd.digestQueue || []).sort((a,b) => (b.score||0)-(a.score||0));\nconst top3  = queue.slice(0, 3);\nsd.digestQueue = queue.slice(3);\n\nconst today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });\n\nlet body = top3.length === 0\n  ? 'No new top matches queued. Job alerts fire every 30 min.'\n  : top3.map((j,i) => {\n      const icon = j.score >= 7 ? '🟢' : j.score >= 5 ? '🟡' : '🟠';\n      return `${i+1}. ${icon} *${j.title}* @ ${j.company||'N/A'}\\n    ⭐${j.score}/10 | ${j.source||''}`;\n    }).join('\\n\\n');\n\nreturn [{ json: { chatId, text:\n  `☀️ Good morning, Harsha. ${today}\n\n${top3.length > 0 ? `Top ${top3.length} job${top3.length>1?'s':''} for today:` : \"Today's jobs:\"}\n\n${body}\n\nPaste any job to analyze it. Say *\"resume\"* after analyzing to get your tailored CV.` } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!chatId) return [];\nif (sd.pausedUntil && new Date() < new Date(sd.pausedUntil)) return [];\n\nconst queue = (sd.digestQueue || []).sort((a,b) => (b.score||0)-(a.score||0));\nconst top3  = queue.slice(0, 3);\nsd.digestQueue = queue.slice(3);\n\nconst today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });\n\nlet body = top3.length === 0\n  ? 'No new jobs queued yet. Paste a job description to analyze it, or check your email for job alerts.'\n  : top3.map((j,i) => {\n      const icon = j.score >= 7 ? '🟢' : j.score >= 5 ? '🟡' : '🟠';\n      return `${i+1}. ${icon} *${j.title}* @ ${j.company||'N/A'}\\n    ⭐${j.score}/10 | ${j.source||''}`;\n    }).join('\\n\\n');\n\nreturn [{ json: { chatId, text:\n  `☀️ Good morning, Harsha. ${today}\n\n${top3.length > 0 ? `Top ${top3.length} job${top3.length>1?'s':''} for today:` : \"Today's jobs:\"}\n\n${body}\n\nPaste any job to analyze it. Say *\"resume\"* after analyzing to get your tailored CV.` } }];"
       },
       "id": "hj-s2",
       "name": "Run: Morning Briefing",
@@ -1352,7 +1412,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId     = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst action     = (structured.action || 'log').toLowerCase();\n\nif (!Array.isArray(sd.recruiters)) sd.recruiters = [];\n\nif (action === 'show') {\n  if (sd.recruiters.length === 0) {\n    return [{ json: { chatId, text: `👥 No recruiters saved yet.\\n\\nTry: \"recruiter John from Deloitte contacted me about SAP BTP\"`, showOnly: true } }];\n  }\n  const sorted = sd.recruiters.slice().sort((a,b) => new Date(b.date||0) - new Date(a.date||0));\n  const lines  = sorted.slice(0,12).map((r,i) => {\n    const src = r.source ? ` · ${r.source}` : '';\n    return `${i+1}. *${r.name||'Unknown'}* @ ${r.company||'?'}\\n   ${r.role||'N/A'} | ${r.email||'No email'}${src}\\n   ${r.date||''}`;\n  }).join('\\n\\n');\n  return [{ json: { chatId, text: `👥 *Your Recruiters (${sd.recruiters.length} total)*\\n\\n${lines}`, showOnly: true } }];\n}\n\nconst rec = {\n  name:    structured.name    || 'Unknown',\n  company: structured.company || 'Unknown',\n  email:   structured.email   || '',\n  role:    structured.role    || '',\n  source:  structured.source  || 'direct',\n  date:    new Date().toISOString().split('T')[0],\n};\n\nconst exists = sd.recruiters.find(r =>\n  (r.email && r.email === rec.email) ||\n  (r.name?.toLowerCase() === rec.name?.toLowerCase() && r.company?.toLowerCase() === rec.company?.toLowerCase())\n);\nif (exists) {\n  Object.assign(exists, rec);\n} else {\n  sd.recruiters.push(rec);\n}\nif (sd.recruiters.length > 200) sd.recruiters = sd.recruiters.slice(-200);\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Recruiter saved.*\\n\\n👤 ${rec.name} @ ${rec.company}\\n${rec.email ? '📧 ' + rec.email + '\\n' : ''}🎯 Role: ${rec.role || 'Not specified'}\\n📅 ${rec.date}\\n\\nTotal recruiters: ${sd.recruiters.length}`,\n  rowData: { Name: rec.name, Company: rec.company, Email: rec.email, Role: rec.role, Source: rec.source, Date: rec.date },\n  showOnly: false,\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId     = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst action     = (structured.action || 'log').toLowerCase();\n\nif (!Array.isArray(sd.recruiters)) sd.recruiters = [];\n\nif (action === 'show') {\n  if (sd.recruiters.length === 0) {\n    return [{ json: { chatId, text: `👥 No recruiters saved yet.\\n\\nTry: \"recruiter John from Deloitte contacted me about SAP BTP\"`, showOnly: true } }];\n  }\n  const sorted = sd.recruiters.slice().sort((a,b) => new Date(b.date||0) - new Date(a.date||0));\n  const lines  = sorted.slice(0,12).map((r,i) => {\n    const src = r.source ? ` · ${r.source}` : '';\n    return `${i+1}. *${r.name||'Unknown'}* @ ${r.company||'?'}\\n   ${r.role||'N/A'} | ${r.email||'No email'}${src}\\n   ${r.date||''}`;\n  }).join('\\n\\n');\n  return [{ json: { chatId, text: `👥 *Your Recruiters (${sd.recruiters.length} total)*\\n\\n${lines}`, showOnly: true } }];\n}\n\nconst rec = {\n  name:    structured.name    || 'Unknown',\n  company: structured.company || 'Unknown',\n  email:   structured.email   || '',\n  role:    structured.role    || '',\n  source:  structured.source  || 'direct',\n  date:    new Date().toISOString().split('T')[0],\n};\n\nconst exists = sd.recruiters.find(r =>\n  (r.email && r.email === rec.email) ||\n  (r.name?.toLowerCase() === rec.name?.toLowerCase() && r.company?.toLowerCase() === rec.company?.toLowerCase())\n);\nif (exists) {\n  Object.assign(exists, rec);\n} else {\n  sd.recruiters.push(rec);\n}\nif (sd.recruiters.length > 200) sd.recruiters = sd.recruiters.slice(-200);\n\nreturn [{ json: {\n  chatId,\n  text: `✅ *Recruiter saved.*\\n\\n👤 ${rec.name} @ ${rec.company}\\n${rec.email ? '📧 ' + rec.email + '\\n' : ''}🎯 Role: ${rec.role || 'Not specified'}\\n📅 ${rec.date}\\n\\nTotal recruiters: ${sd.recruiters.length}`,\n  // Spread flat for Sheets autoMapInputData\n  Name: rec.name, Company: rec.company, Email: rec.email, Role: rec.role, Source: rec.source, Date: rec.date,\n  showOnly: false,\n} }];"
       },
       "id": "hj-rc2",
       "name": "Process: Recruiter",
@@ -1860,12 +1920,41 @@
       "main": [
         [
           {
+            "node": "IF: build success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: build success": {
+      "main": [
+        [
+          {
+            "node": "Format: Build Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Execute: Convert to PDF",
             "type": "main",
             "index": 0
           },
           {
             "node": "Read: Resume DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format: Build Error": {
+      "main": [
+        [
+          {
+            "node": "Send: Build Error",
             "type": "main",
             "index": 0
           }
