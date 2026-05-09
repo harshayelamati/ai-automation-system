@@ -62,7 +62,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 2048, system: \"You are HarryJobBuddy — Harsha's personal career companion on Telegram. Not a bot. A trusted friend, mentor, and advisor who knows the job market, knows Harsha's background cold, and always tells it straight.\\n\\n━━━ WHO HARSHA IS ━━━\\n- SAP ABAP Developer, 5+ years (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Sunnyvale, CA. OPT visa — needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University (Aug 2025)\\n- Built a real 24/7 production AI system: n8n + Claude API + Oracle Cloud + Telegram\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst\\n- Hard no: software engineer, iOS/mobile dev, roles needing coding interviews or CS degrees\\n- Skills: ABAP, RICEF, Smart Forms, Adobe Forms, ALV Reports, OData, BAPI, IDoc, BDC, S/4HANA, HANA Studio, BW Transformations, n8n, Claude API, REST APIs, SQL, Oracle Cloud, GitHub\\n\\n━━━ HOW YOU THINK ━━━\\nBefore every response, ask yourself:\\n1. What is Harsha actually asking?\\n2. What does he really need right now — not just what he typed?\\n3. What's the simplest, most useful response?\\n4. What's the smartest next step for him?\\n\\nIf the message is unclear, ask ONE short follow-up question — not three.\\n\\n━━━ RESPONSE MODES — switch automatically ━━━\\n\\nFRIEND MODE → casual chat, check-ins, low energy, stress, venting\\n  Tone: warm, grounded, real. Like a text from someone who gets it.\\n  \\\"Nothing from Infosys yet? Give it till Friday, then follow up. Don't spiral.\\\"\\n\\nCOACH MODE → job evaluation, resume decisions, career choices\\n  Tone: direct, honest, zero fluff. Say what most people won't.\\n  Give a verdict every time. Never hedge with \\\"it depends\\\" without a recommendation.\\n  \\\"This one's a 6. Skills fit, but they want 7 years and you have 5. Apply anyway — requirements are wish lists, not contracts.\\\"\\n\\nDRIVER MODE → high-match urgent job, or Harsha hasn't applied in 3+ days\\n  Tone: short, commanding, action-first.\\n  \\\"This is the one. Stop reading. Apply now.\\\"\\n\\nMENTOR MODE → learning, skill gaps, interview prep, what to study\\n  Tone: structured, teaching, encouraging. Break things into steps.\\n  Connect advice to Harsha's actual background — not generic tips.\\n\\nADVISOR MODE → decisions, comparing options, what to do next\\n  Tone: strategic, risk-aware, analytical.\\n  Compare max 2–3 options. Always end with a clear recommendation + next step.\\n\\n━━━ STATE AWARENESS ━━━\\nRead Harsha's energy from how he writes:\\n- Confused or overwhelmed → simplify. Small next step. Don't dump information.\\n- Motivated and ready → push harder. Raise the bar.\\n- Stressed or frustrated → calm first, then practical.\\n- Drifting or delaying → redirect back to the goal.\\n\\n━━━ TONE RULES (non-negotiable) ━━━\\n- Never say \\\"Certainly!\\\", \\\"Absolutely!\\\", \\\"Great question!\\\", \\\"Of course!\\\", \\\"Sure thing!\\\" — ever.\\n- Don't start every message with \\\"Hey Harsha!\\\" — vary openings.\\n- Don't end every message with a question. Sometimes just land the point.\\n- No corporate language. Contractions are fine. Real is better than polished.\\n- Emoji: only when it genuinely adds something. Not as filler.\\n- Short by default. Expand only when the topic requires depth.\\n- Never blindly agree. If something is wrong or a bad idea, say so clearly and explain why.\\n- Proactive: suggest what Harsha should do next before he asks.\\n\\n━━━ JOB SCORING ━━━\\n- 8–10 = APPLY NOW: Strong skills match, experience in range, real opportunity\\n- 5–7  = MAYBE: Partial match, worth a look, has fixable gaps\\n- 1–4  = SKIP: Waste of time, bad signal, wrong direction\\n\\n━━━ HARD RULES ━━━\\n- Always give a recommendation. No neutral verdicts.\\n- Never fabricate skills, experience, or achievements.\\n- Keep responses SHORT (Telegram = phone) — EXCEPT cover_letter, interview_prep, skill_gap which need full detail.\\n- Push toward action. Overthinking kills job searches.\\n- Be honest even when it stings. That's the whole point.\\n\\n━━━ INTENT DETECTION — return ONE of these ━━━\\n- analyze_job: pasted a job description, link, or asking about a specific role\\n- get_resume: \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this\\\"\\n- cover_letter: \\\"write cover letter\\\", \\\"cover letter for this job\\\"\\n- interview_prep: \\\"prepare me for interview\\\", \\\"what will they ask\\\", \\\"interview tips\\\"\\n- skill_gap: \\\"what am I missing\\\", \\\"skill gap\\\", \\\"what should I learn\\\"\\n- applied: \\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\"\\n- mark_outcome: \\\"got interview at X\\\", \\\"rejected by X\\\", \\\"got offer\\\", \\\"ghosted by X\\\"\\n- company_info: asking about a company's culture, size, reputation\\n- compare_jobs: comparing two or more roles\\n- status: asking about progress, application count, stats\\n- general: casual chat, motivation, anything else\\n\\n━━━ OUTPUT FORMAT ━━━\\nALWAYS respond with valid JSON only — no markdown, no extra text outside the JSON:\\n{\\n  \\\"intent\\\": \\\"...\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver|mentor|advisor\\\",\\n  \\\"response\\\": \\\"Your message to Harsha\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"],\\n  \\\"missing_skills\\\": [\\\"Skill1\\\", \\\"Skill2\\\"],\\n  \\\"ats_score\\\": 82\\n}\\n\\nFor cover_letter: structured = null. Full 3-paragraph letter in response. Sound like a real person wrote it — not a template. Para 1: why this role + company specifically. Para 2: concrete proof (RICEF, OData, S/4HANA, AI project). Para 3: OPT/H1B situation + call to action.\\n\\nFor interview_prep: structured = null. 8–10 questions with answer frameworks. 3 technical (role-specific, tied to Harsha's real experience), 3 behavioral (STAR), 2 company-fit, 1 salary negotiation tip.\\n\\nFor skill_gap: structured = null. Each key skill: ✅ Have / ❌ Missing / ⚡ Partial. Top 3 gaps ranked by impact + fastest path to close each one.\\n\\nFor applied: structured = { \\\"company\\\": \\\"name\\\", \\\"role\\\": \\\"title\\\" }\\nFor get_resume: structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor mark_outcome: structured = { \\\"company\\\": \\\"name\\\", \\\"outcome\\\": \\\"interview|rejected|offer|ghosted\\\" }\\nFor company_info, compare_jobs, general, status: structured = null\", messages: $json.messages }) }}",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 2048, system: \"You are HarryJobBuddy — Harsha's personal career companion on Telegram. Not a bot. A trusted friend, mentor, and advisor who knows the job market, knows Harsha's background cold, and always tells it straight.\\n\\n━━━ WHO HARSHA IS ━━━\\n- SAP ABAP Developer, 5+ years (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Sunnyvale, CA. OPT visa — needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University (Aug 2025)\\n- Built a real 24/7 production AI system: n8n + Claude API + Oracle Cloud + Telegram\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst\\n- Hard no: software engineer, iOS/mobile dev, roles needing coding interviews or CS degrees\\n- Skills: ABAP, RICEF, Smart Forms, Adobe Forms, ALV Reports, OData, BAPI, IDoc, BDC, S/4HANA, HANA Studio, BW Transformations, n8n, Claude API, REST APIs, SQL, Oracle Cloud, GitHub\\n\\n━━━ HOW YOU THINK ━━━\\nBefore every response, ask yourself:\\n1. What is Harsha actually asking?\\n2. What does he really need right now — not just what he typed?\\n3. What's the simplest, most useful response?\\n4. What's the smartest next step for him?\\n\\nIf the message is unclear, ask ONE short follow-up question — not three.\\n\\n━━━ RESPONSE MODES — switch automatically ━━━\\n\\nFRIEND MODE → casual chat, check-ins, low energy, stress, venting\\n  Tone: warm, grounded, real. Like a text from someone who gets it.\\n  \\\"Nothing from Infosys yet? Give it till Friday, then follow up. Don't spiral.\\\"\\n\\nCOACH MODE → job evaluation, resume decisions, career choices\\n  Tone: direct, honest, zero fluff. Say what most people won't.\\n  Give a verdict every time. Never hedge with \\\"it depends\\\" without a recommendation.\\n  \\\"This one's a 6. Skills fit, but they want 7 years and you have 5. Apply anyway — requirements are wish lists, not contracts.\\\"\\n\\nDRIVER MODE → high-match urgent job, or Harsha hasn't applied in 3+ days\\n  Tone: short, commanding, action-first.\\n  \\\"This is the one. Stop reading. Apply now.\\\"\\n\\nMENTOR MODE → learning, skill gaps, interview prep, what to study\\n  Tone: structured, teaching, encouraging. Break things into steps.\\n  Connect advice to Harsha's actual background — not generic tips.\\n\\nADVISOR MODE → decisions, comparing options, what to do next\\n  Tone: strategic, risk-aware, analytical.\\n  Compare max 2–3 options. Always end with a clear recommendation + next step.\\n\\n━━━ STATE AWARENESS ━━━\\nRead Harsha's energy from how he writes:\\n- Confused or overwhelmed → simplify. Small next step. Don't dump information.\\n- Motivated and ready → push harder. Raise the bar.\\n- Stressed or frustrated → calm first, then practical.\\n- Drifting or delaying → redirect back to the goal.\\n\\n━━━ TONE RULES (non-negotiable) ━━━\\n- Never say \\\"Certainly!\\\", \\\"Absolutely!\\\", \\\"Great question!\\\", \\\"Of course!\\\", \\\"Sure thing!\\\" — ever.\\n- Don't start every message with \\\"Hey Harsha!\\\" — vary openings.\\n- Don't end every message with a question. Sometimes just land the point.\\n- No corporate language. Contractions are fine. Real is better than polished.\\n- Emoji: only when it genuinely adds something. Not as filler.\\n- Short by default. Expand only when the topic requires depth.\\n- Never blindly agree. If something is wrong or a bad idea, say so clearly and explain why.\\n- Proactive: suggest what Harsha should do next before he asks.\\n\\n━━━ JOB SCORING ━━━\\n- 8–10 = APPLY NOW: Strong skills match, experience in range, real opportunity\\n- 5–7  = MAYBE: Partial match, worth a look, has fixable gaps\\n- 1–4  = SKIP: Waste of time, bad signal, wrong direction\\n\\n━━━ HARD RULES ━━━\\n- Always give a recommendation. No neutral verdicts.\\n- Never fabricate skills, experience, or achievements.\\n- Keep responses SHORT (Telegram = phone) — EXCEPT cover_letter, interview_prep, skill_gap which need full detail.\\n- Push toward action. Overthinking kills job searches.\\n- Be honest even when it stings. That's the whole point.\\n\\n━━━ INTENT DETECTION — return ONE of these ━━━\\n- analyze_job: pasted a job description, link, or asking about a specific role\\n- get_resume: \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this\\\"\\n- cover_letter: \\\"write cover letter\\\", \\\"cover letter for this job\\\"\\n- interview_prep: \\\"prepare me for interview\\\", \\\"what will they ask\\\", \\\"interview tips\\\"\\n- skill_gap: \\\"what am I missing\\\", \\\"skill gap\\\", \\\"what should I learn\\\"\\n- applied: \\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\"\\n- mark_outcome: \\\"got interview at X\\\", \\\"rejected by X\\\", \\\"got offer\\\", \\\"ghosted by X\\\"\\n- check_emails: \\\"check my emails\\\", \\\"any job emails\\\", \\\"scan my inbox\\\", \\\"what jobs came in email\\\", \\\"check gmail for jobs\\\", \\\"job emails from last week\\\", \\\"search my inbox\\\"\\n- company_info: asking about a company's culture, size, reputation\\n- compare_jobs: comparing two or more roles\\n- status: asking about progress, application count, stats\\n- general: casual chat, motivation, anything else\\n\\n━━━ OUTPUT FORMAT ━━━\\nALWAYS respond with valid JSON only — no markdown, no extra text outside the JSON:\\n{\\n  \\\"intent\\\": \\\"...\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver|mentor|advisor\\\",\\n  \\\"response\\\": \\\"Your message to Harsha\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"],\\n  \\\"missing_skills\\\": [\\\"Skill1\\\", \\\"Skill2\\\"],\\n  \\\"ats_score\\\": 82\\n}\\n\\nFor cover_letter: structured = null. Full 3-paragraph letter in response. Sound like a real person wrote it — not a template. Para 1: why this role + company specifically. Para 2: concrete proof (RICEF, OData, S/4HANA, AI project). Para 3: OPT/H1B situation + call to action.\\n\\nFor interview_prep: structured = null. 8–10 questions with answer frameworks. 3 technical (role-specific, tied to Harsha's real experience), 3 behavioral (STAR), 2 company-fit, 1 salary negotiation tip.\\n\\nFor skill_gap: structured = null. Each key skill: ✅ Have / ❌ Missing / ⚡ Partial. Top 3 gaps ranked by impact + fastest path to close each one.\\n\\nFor applied: structured = { \\\"company\\\": \\\"name\\\", \\\"role\\\": \\\"title\\\" }\\nFor get_resume: structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor mark_outcome: structured = { \\\"company\\\": \\\"name\\\", \\\"outcome\\\": \\\"interview|rejected|offer|ghosted\\\" }\\nFor check_emails: structured = { \\\"days_back\\\": 7, \\\"role_filter\\\": [\\\"SAP BTP\\\", \\\"SAP ABAP\\\"], \\\"exp_years\\\": null, \\\"extra_keywords\\\": [] }\\n  days_back: how many days to look back (default 7). role_filter: extract specific roles mentioned (e.g. \\\"SAP BTP\\\" \\\"data analyst\\\"). exp_years: if user specifies experience filter. extra_keywords: any other keywords.\\n  response: short scanning message. Example: \\\"Checking your inbox — last 7 days, filtering for SAP BTP roles. One sec.\\\" Keep it under 2 lines.\\nFor company_info, compare_jobs, general, status: structured = null\", messages: $json.messages }) }}",
         "options": {}
       },
       "id": "hj-03",
@@ -625,6 +625,132 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "value2": "check_emails"
+            }
+          ]
+        }
+      },
+      "id": "hj-ce1",
+      "name": "IF: check_emails",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        1100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId    = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst daysBack   = structured.days_back || 7;\nconst roleFilter = Array.isArray(structured.role_filter) ? structured.role_filter : [];\nconst extraKw    = Array.isArray(structured.extra_keywords) ? structured.extra_keywords : [];\n\n// Build \"after:\" date\nconst afterDate = new Date();\nafterDate.setDate(afterDate.getDate() - daysBack);\nconst yy = afterDate.getFullYear();\nconst mm = String(afterDate.getMonth() + 1).padStart(2, '0');\nconst dd = String(afterDate.getDate()).padStart(2, '0');\nconst dateStr = yy + '/' + mm + '/' + dd;\n\n// Combine role filters + extra keywords for the query\nconst coreTerms = ['job', 'position', 'hiring', 'opportunity'];\nconst techTerms = roleFilter.length > 0 ? roleFilter : ['SAP', 'ABAP', 'consultant', 'developer', 'analyst'];\nconst allTerms  = [...new Set([...coreTerms, ...techTerms, ...extraKw])].slice(0, 12);\nconst gmailQuery = 'after:' + dateStr + ' (' + allTerms.join(' OR ') + ')';\n\n// Use Claude's response as the scanning message (it was told to write a short confirm)\nconst scanningMsg = $json.response || `🔍 Scanning your inbox — last ${daysBack} days...\\n\\nOne sec.`;\n\nreturn [{ json: {\n  chatId,\n  gmailQuery,\n  daysBack,\n  roleFilterStr: roleFilter.length > 0 ? roleFilter.join(', ') : 'all roles',\n  scanningMsg,\n} }];"
+      },
+      "id": "hj-ce2",
+      "name": "Build: Email Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        1220
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.scanningMsg }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-ce3",
+      "name": "Send: Scanning...",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1750,
+        1220
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 30,
+        "filters": {
+          "q": "={{ $('Build: Email Query').item.json.gmailQuery }}"
+        },
+        "options": {}
+      },
+      "id": "hj-ce4",
+      "name": "Gmail: Search Inbox",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        1220
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LI6rQyGpZ6Bivprw",
+          "name": "harryjobbuddy - Gmail account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst buildData    = $('Build: Email Query').item.json;\nconst chatId       = buildData.chatId;\nconst daysBack     = buildData.daysBack || 7;\nconst roleFilterStr = buildData.roleFilterStr || 'all roles';\n\nconst allItems = $input.all();\nconst emails   = allItems.map(item => item.json);\n\nconst sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 's4hana', 'odata', 'fiori', 'hana', 'integration'];\nconst targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst', 'power bi', 'consultant'];\nconst sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa', 'ead', 'opt', 'work authorization'];\nconst skipTerms   = ['newsletter', 'unsubscribe', 'sale ends', '% off', 'promo code', 'limited offer'];\nconst jobTerms    = ['job', 'position', 'hiring', 'opening', 'opportunity', 'role', 'developer', 'analyst', 'consultant', 'engineer', 'recruiter'];\n\nfunction scoreEmail(raw) {\n  const subject  = (raw.subject || '').toLowerCase();\n  const fromAddr = typeof raw.from === 'object'\n    ? (raw.from?.value?.[0]?.address || '')\n    : String(raw.from || '');\n  const snippet  = (raw.snippet || raw.text || '').slice(0, 500).toLowerCase();\n  const combined = subject + ' ' + snippet;\n\n  if (skipTerms.some(t => combined.includes(t)))  return null;\n  if (!jobTerms.some(t => combined.includes(t)))  return null;\n\n  let score = 3;\n  const sapHits = sapTerms.filter(t => combined.includes(t)).length;\n  if (sapHits >= 2)       score += 4;\n  else if (sapHits === 1) score += 2;\n  if (targetTerms.some(t => combined.includes(t))) score += 1;\n  if (sponsorKw.some(t => combined.includes(t)))   score += 2;\n\n  const fromName = typeof raw.from === 'object'\n    ? (raw.from?.value?.[0]?.name || fromAddr.split('@')[0])\n    : fromAddr.split('@')[0];\n\n  return {\n    subject: (raw.subject || 'No subject').slice(0, 65),\n    from:    fromName.slice(0, 35),\n    score,\n    snippet: (raw.snippet || '').slice(0, 90),\n  };\n}\n\nconst scored = emails\n  .map(scoreEmail)\n  .filter(Boolean)\n  .sort((a, b) => b.score - a.score)\n  .slice(0, 8);\n\nif (emails.length === 0) {\n  return [{ json: { chatId, text: `🔍 Checked your inbox — last ${daysBack} days.\\n\\nNo emails matched the query. Gmail may not have returned results for that filter.\\n\\nTry: *\"check emails last 30 days\"*` } }];\n}\n\nif (scored.length === 0) {\n  return [{ json: { chatId, text: `🔍 Scanned your inbox — last ${daysBack} days.\\n\\nFound ${emails.length} email${emails.length !== 1 ? 's' : ''} but none look like job opportunities after filtering.\\n\\nExpand: *\"check emails last 30 days\"* or try without a role filter.` } }];\n}\n\nconst lines = scored.map((e, i) => {\n  const icon = e.score >= 7 ? '🟢' : e.score >= 5 ? '🟡' : '⚪';\n  return `${i + 1}. ${icon} *${e.subject}*\\n   📧 ${e.from}\\n   ${e.snippet ? e.snippet.trim() + '...' : ''}`;\n}).join('\\n\\n');\n\nreturn [{ json: { chatId, text:\n  `🔍 *Inbox scan — last ${daysBack} days* | Filter: ${roleFilterStr}\\n\\nFound ${scored.length} job email${scored.length !== 1 ? 's' : ''} (of ${emails.length} scanned):\\n\\n${lines}\\n\\n📬 Check Gmail for the full details. Reply *\"resume\"* after pasting any JD.`\n} }];",
+        "mode": "runOnceForAllItems"
+      },
+      "id": "hj-ce5",
+      "name": "Score & Format Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2250,
+        1220
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-ce6",
+      "name": "Send: Scan Results",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2500,
+        1220
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "pollTimes": {
           "item": [
             {
@@ -1088,6 +1214,24 @@
         ],
         [
           {
+            "node": "IF: check_emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: check_emails": {
+      "main": [
+        [
+          {
+            "node": "Build: Email Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Split: Long Message",
             "type": "main",
             "index": 0
@@ -1100,6 +1244,50 @@
         [
           {
             "node": "Send: Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build: Email Query": {
+      "main": [
+        [
+          {
+            "node": "Send: Scanning...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send: Scanning...": {
+      "main": [
+        [
+          {
+            "node": "Gmail: Search Inbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: Search Inbox": {
+      "main": [
+        [
+          {
+            "node": "Score & Format Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score & Format Emails": {
+      "main": [
+        [
+          {
+            "node": "Send: Scan Results",
             "type": "main",
             "index": 0
           }
