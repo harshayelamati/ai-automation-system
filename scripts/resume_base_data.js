@@ -17,7 +17,7 @@ module.exports = {
 
   // Default summary — overridden per job by dynamic builder
   defaultSummary:
-    "SAP Technical Consultant with 5+ years of hands-on ABAP development experience across SD, MM, and BW landscapes, including S/4HANA migrations, OData services, and RICEF development. Independently designed and deployed a production AI assistant integrating Claude API, n8n workflow automation, and 10+ real-time data APIs — demonstrating ability to bridge traditional SAP with modern cloud and AI technologies. Master's in Data Analytics (Indiana Wesleyan University, 2025). Actively seeking SAP BTP, technical consulting, or AI automation roles with H1B sponsorship.",
+    "SAP ABAP developer with 5+ years of hands-on experience delivering RICEF solutions, OData services, and S/4HANA integrations for enterprise clients across SD, MM, and BW landscapes. Known for translating complex functional specs into clean, performant ABAP — and for going beyond the ticket to understand why a system works the way it does. Recently built a full production AI system from the ground up (n8n + Claude API + Oracle Cloud, running 24/7), which gave hands-on experience with REST APIs, cloud infrastructure, and event-driven design patterns. That's not a side project — it's the same integration thinking that BTP and modern SAP cloud roles demand. Master's in Data Analytics, Indiana Wesleyan University (2025). Based in Sunnyvale, CA. Seeking H1B sponsorship.",
 
   skills: {
     "SAP Core":         "ABAP, RICEF, Smart Forms, Adobe Forms, ALV Reports, OData Services, BAPI, IDoc, BDC, S/4HANA, SAP HANA Studio, STMS, Data Dictionary",
@@ -50,11 +50,10 @@ module.exports = {
       company: "Doowon Climate Control India Pvt. Ltd.",
       dates:   "May 2019 – Jan 2022",
       bullets: [
-        "Developed custom ALV reports and Smart Forms aligned with business requirements, improving operational visibility for end users.",
-        "Converted functional specifications into scalable ABAP technical solutions, improving maintainability and reuse.",
-        "Built custom function modules, tables, and views, reducing redundant code by 20%.",
-        "Implemented BAPI enhancements and supported IDoc-based integrations for external systems.",
-        "Automated reporting and form generation through background job scheduling, reducing manual effort by 30%.",
+        "Built custom ALV reports and Smart Forms from functional specs, giving operations teams real-time visibility into production and inventory data.",
+        "Developed reusable ABAP function modules, tables, and custom views — reducing redundant code by 20% and cutting future dev time on similar requests.",
+        "Delivered BAPI enhancements and IDoc-based integrations for external vendor systems with zero downtime during go-live.",
+        "Set up automated background job scheduling for reporting and form generation, eliminating 30% of recurring manual work.",
       ],
     },
     {
