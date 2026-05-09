@@ -171,8 +171,22 @@
     },
     {
       "parameters": {
+        "jsCode": "const text   = $json.response || $json.text || '';\nconst chatId = $json.chatId;\nconst MAX    = 3800;\n\nif (text.length <= MAX) {\n  return [{ json: { chatId, text } }];\n}\n\nconst chunks = [];\nlet current  = '';\nfor (const line of text.split('\\n')) {\n  if ((current + '\\n' + line).length > MAX) {\n    if (current) chunks.push(current.trim());\n    current = line;\n  } else {\n    current = current ? current + '\\n' + line : line;\n  }\n}\nif (current) chunks.push(current.trim());\n\nreturn chunks.map(chunk => ({ json: { chatId, text: chunk } }));"
+      },
+      "id": "hj-05e",
+      "name": "Split: Long Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        1100
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.response }}",
+        "text": "={{ $json.text }}",
         "additionalFields": {
           "parse_mode": "Markdown",
           "disable_web_page_preview": true
@@ -183,7 +197,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        1500,
+        1550,
         1100
       ],
       "credentials": {
@@ -196,7 +210,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst job = $json.lastJob || sd.lastAnalyzedJob || {};\n\nconst company   = (job.company || 'Company').replace(/[^a-zA-Z0-9]/g,'_');\nconst role      = job.title    || 'SAP Consultant';\nconst keywords  = (job.keywords || []).join(', ');\nconst applyLink = job.link || job.apply_link || null;\nconst expReq    = job.exp_required || 'Not specified';\n\nconst tailoredSummary =\n  `SAP Technical Consultant and AI Automation Engineer with 5+ years of hands-on ABAP and enterprise consulting experience. \\\nExpertise in ${keywords || 'SAP BTP, Integration, S/4HANA, OData, RICEF'}. \\\nIndependently designed and deployed a production AI automation system (n8n + Claude API + Oracle Cloud, 24/7). \\\nMaster's in Data Analytics, Indiana Wesleyan University (2025). Actively seeking H1B sponsorship.`;\n\nconst ctx = JSON.stringify({\n  summary:    tailoredSummary,\n  company:    job.company || 'Company',\n  role,\n  keywords:   job.keywords || [],\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n});\n\nreturn [{ json: {\n  buildCmd:   `node /home/ubuntu/job-scripts/build_resume_dynamic.js '${ctx.replace(/'/g, \"'\\\\''\")}'`,\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n  pdfPath:    `/tmp/HarshaYelamati_${company}.pdf`,\n  company:    job.company || 'Company',\n  role, keywords, applyLink, expReq,\n  chatId: $json.chatId || sd.chatId,\n} }];"
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\n// Use Claude's structured output first, then fall back to last analyzed job in static data\nconst job = $json.structured || $json.lastJob || sd.lastAnalyzedJob || null;\n\nif (!job || (!job.company && !job.title)) {\n  return [{ json: {\n    chatId:  $json.chatId || sd.chatId,\n    text:    \"⚠️ No job analyzed yet\\. Paste a job description first, then say *\\\"resume\\\"* and I'll build a tailored CV for it\\.\",\n    noJob:   true,\n    buildCmd: null,\n    outputPath: null,\n  }}];\n}\n\nconst company   = (job.company || 'Company').replace(/[^a-zA-Z0-9]/g,'_');\nconst role      = job.title    || 'SAP Consultant';\nconst keywords  = (job.keywords || []).join(', ');\nconst applyLink = job.link || job.apply_link || null;\nconst expReq    = job.exp_required || 'Not specified';\n\nconst tailoredSummary =\n  `SAP Technical Consultant and AI Automation Engineer with 5+ years of hands-on ABAP and enterprise consulting experience. \\\nExpertise in ${keywords || 'SAP BTP, Integration, S/4HANA, OData, RICEF'}. \\\nIndependently designed and deployed a production AI automation system (n8n + Claude API + Oracle Cloud, 24/7). \\\nMaster's in Data Analytics, Indiana Wesleyan University (2025). Actively seeking H1B sponsorship.`;\n\nconst ctx = JSON.stringify({\n  summary:    tailoredSummary,\n  company:    job.company || 'Company',\n  role,\n  keywords:   job.keywords || [],\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n});\n\nreturn [{ json: {\n  buildCmd:   `node /home/ubuntu/job-scripts/build_resume_dynamic.js '${ctx.replace(/'/g, \"'\\\\''\")}'`,\n  outputPath: `/tmp/HarshaYelamati_${company}.docx`,\n  pdfPath:    `/tmp/HarshaYelamati_${company}.pdf`,\n  company:    job.company || 'Company',\n  role, keywords, applyLink, expReq,\n  chatId: $json.chatId || sd.chatId,\n} }];"
       },
       "id": "hj-07",
       "name": "Prep: Resume Build",
@@ -206,6 +220,51 @@
         1500,
         260
       ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ !!$json.noJob }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "hj-07b",
+      "name": "IF: no job context",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1750,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-07c",
+      "name": "Send: No Job Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        140
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -403,6 +462,20 @@
     },
     {
       "parameters": {
+        "jsCode": "return [{ json: {\n  chatId: $('Process: Log Applied').item.json.chatId,\n  text:   $('Process: Log Applied').item.json.text,\n}}];"
+      },
+      "id": "hj-14b",
+      "name": "Restore: Applied Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        440
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "chatId": "={{ $json.chatId }}",
         "text": "={{ $json.text }}",
         "additionalFields": {
@@ -415,7 +488,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        2000,
+        2250,
         440
       ],
       "credentials": {
@@ -513,6 +586,20 @@
     },
     {
       "parameters": {
+        "jsCode": "return [{ json: {\n  chatId: $('Process: Mark Outcome').item.json.chatId,\n  text:   $('Process: Mark Outcome').item.json.text,\n}}];"
+      },
+      "id": "hj-34c",
+      "name": "Restore: Outcome Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        1060
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "chatId": "={{ $json.chatId }}",
         "text": "={{ $json.text }}",
         "additionalFields": {
@@ -525,7 +612,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        2000,
+        2250,
         1060
       ],
       "credentials": {
@@ -647,6 +734,17 @@
         ],
         [
           {
+            "node": "Split: Long Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split: Long Message": {
+      "main": [
+        [
+          {
             "node": "Send: Response",
             "type": "main",
             "index": 0
@@ -656,6 +754,24 @@
     },
     "Prep: Resume Build": {
       "main": [
+        [
+          {
+            "node": "IF: no job context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: no job context": {
+      "main": [
+        [
+          {
+            "node": "Send: No Job Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Execute: Build Resume DOCX",
@@ -745,6 +861,17 @@
       "main": [
         [
           {
+            "node": "Restore: Applied Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore: Applied Data": {
+      "main": [
+        [
+          {
             "node": "Send: Applied Confirmation",
             "type": "main",
             "index": 0
@@ -775,6 +902,17 @@
       ]
     },
     "Sheets: Log Outcome": {
+      "main": [
+        [
+          {
+            "node": "Restore: Outcome Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore: Outcome Data": {
       "main": [
         [
           {
