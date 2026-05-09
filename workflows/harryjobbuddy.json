@@ -269,7 +269,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { execSync } = require('child_process');\nconst buildCmd = $json.buildCmd;\ntry {\n  execSync(buildCmd, { timeout: 30000 });\n} catch(e) {\n  // continue even if error\n}\nreturn [{ json: { ...$json } }];"
+        "jsCode": "const { execSync } = require('child_process');\n// Use the same Node binary that's running n8n — avoids PATH issues\nconst nodeBin  = process.execPath;\nconst buildCmd = $json.buildCmd.replace(/^node /, '\"' + nodeBin + '\" ');\nlet buildStdout = '', buildStderr = '';\ntry {\n  buildStdout = execSync(buildCmd, { timeout: 60000, cwd: '/home/ubuntu/job-scripts' }).toString();\n} catch(e) {\n  buildStderr = (e.stderr?.toString() || e.message || 'unknown error').slice(0, 500);\n}\nreturn [{ json: { ...$json, buildStdout, buildStderr } }];"
       },
       "id": "hj-08",
       "name": "Execute: Build Resume DOCX",
