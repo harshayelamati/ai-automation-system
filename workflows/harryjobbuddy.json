@@ -377,7 +377,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const { company, role, keywords, applyLink, expReq } = $json;\nconst sd = $getWorkflowStaticData('global');\nconst applyLine = applyLink ? `\\n🔗 Apply: ${applyLink}` : '';\n\nconst text = `📄 *Resume ready — ${role} @ ${company}*\n\n✅ Tailored to: ${keywords || 'your target role'}\n📋 Role: ${role}\n⏳ Experience needed: ${expReq}${applyLine}\n\nSent as DOCX above. Good luck! 🙌`;\n\nreturn [{ json: { text, chatId: $json.chatId || sd.chatId } }];"
+        "jsCode": "// readBinaryFile wipes $json — reference the Prep node directly\nconst prep    = $('Prep: Resume Build').item.json;\nconst company = prep.company || 'Company';\nconst role    = prep.role    || 'SAP Consultant';\nconst keywords  = prep.keywords  || 'your target role';\nconst applyLink = prep.applyLink || null;\nconst expReq    = prep.expReq    || 'Not specified';\nconst chatId    = prep.chatId;\n\nconst applyLine = applyLink ? `\\n🔗 Apply: ${applyLink}` : '';\n\nconst text = `📄 *Resume ready — ${role} @ ${company}*\n\n✅ Tailored to: ${keywords}\n📋 Role: ${role}\n⏳ Exp needed: ${expReq}${applyLine}\n\nGood luck! 🙌`;\n\nreturn [{ json: { text, chatId } }];"
       },
       "id": "hj-11",
       "name": "Format: Resume Message",
