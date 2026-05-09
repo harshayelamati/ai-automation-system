@@ -91,45 +91,82 @@
     },
     {
       "parameters": {
-        "dataType": "string",
-        "value1": "={{ $json.intent }}",
-        "rules": {
-          "rules": [
+        "conditions": {
+          "string": [
             {
-              "value2": "analyze_job"
-            },
-            {
+              "value1": "={{ $json.intent }}",
               "value2": "get_resume"
-            },
-            {
-              "value2": "applied"
-            },
-            {
-              "value2": "status"
-            },
-            {
-              "value2": "cover_letter"
-            },
-            {
-              "value2": "interview_prep"
-            },
-            {
-              "value2": "skill_gap"
-            },
-            {
-              "value2": "mark_outcome"
             }
           ]
-        },
-        "fallbackOutput": 8
+        }
       },
-      "id": "hj-05",
-      "name": "Route: Intent Switch",
-      "type": "n8n-nodes-base.switch",
+      "id": "hj-05a",
+      "name": "IF: get_resume",
+      "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
         1200,
         300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "value2": "applied"
+            }
+          ]
+        }
+      },
+      "id": "hj-05b",
+      "name": "IF: applied",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "value2": "mark_outcome"
+            }
+          ]
+        }
+      },
+      "id": "hj-05c",
+      "name": "IF: mark_outcome",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.intent }}",
+              "value2": "status"
+            }
+          ]
+        }
+      },
+      "id": "hj-05d",
+      "name": "IF: status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        900
       ]
     },
     {
@@ -142,12 +179,12 @@
         }
       },
       "id": "hj-06",
-      "name": "Send: Job Analysis",
+      "name": "Send: Response",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
         1500,
-        80
+        1100
       ],
       "credentials": {
         "telegramApi": {
@@ -430,81 +467,6 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.response }}",
-        "additionalFields": {
-          "parse_mode": "Markdown",
-          "disable_web_page_preview": true
-        }
-      },
-      "id": "hj-31",
-      "name": "Send: Cover Letter",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1,
-      "position": [
-        1500,
-        700
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "MbAh3dEmqQNH81lF",
-          "name": "HarryJobBuddy Bot"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.response }}",
-        "additionalFields": {
-          "parse_mode": "Markdown",
-          "disable_web_page_preview": true
-        }
-      },
-      "id": "hj-32",
-      "name": "Send: Interview Prep",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1,
-      "position": [
-        1500,
-        820
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "MbAh3dEmqQNH81lF",
-          "name": "HarryJobBuddy Bot"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.response }}",
-        "additionalFields": {
-          "parse_mode": "Markdown",
-          "disable_web_page_preview": true
-        }
-      },
-      "id": "hj-33",
-      "name": "Send: Skill Gap",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1,
-      "position": [
-        1500,
-        940
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "MbAh3dEmqQNH81lF",
-          "name": "HarryJobBuddy Bot"
-        }
-      },
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
         "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\nconst outcomeDate = new Date().toISOString().split('T')[0];\n\nreturn [{ json: {\n  chatId,\n  text: $json.response,\n  rowData: {\n    Company:        company,\n    Role:           sd.applications?.find(a => a.company.toLowerCase().includes(company.toLowerCase()))?.role || '',\n    'New Status':   statusLabel,\n    'Outcome Date': outcomeDate,\n    Notes:          '',\n  },\n} }];"
       },
       "id": "hj-34",
@@ -573,31 +535,6 @@
         }
       },
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.chatId }}",
-        "text": "={{ $json.response }}",
-        "additionalFields": {
-          "parse_mode": "Markdown",
-          "disable_web_page_preview": true
-        }
-      },
-      "id": "hj-18",
-      "name": "Send: General Response",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1,
-      "position": [
-        1500,
-        1180
-      ],
-      "credentials": {
-        "telegramApi": {
-          "id": "MbAh3dEmqQNH81lF",
-          "name": "HarryJobBuddy Bot"
-        }
-      },
-      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -638,22 +575,15 @@
       "main": [
         [
           {
-            "node": "Route: Intent Switch",
+            "node": "IF: get_resume",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Route: Intent Switch": {
+    "IF: get_resume": {
       "main": [
-        [
-          {
-            "node": "Send: Job Analysis",
-            "type": "main",
-            "index": 0
-          }
-        ],
         [
           {
             "node": "Prep: Resume Build",
@@ -663,6 +593,17 @@
         ],
         [
           {
+            "node": "IF: applied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: applied": {
+      "main": [
+        [
+          {
             "node": "Process: Log Applied",
             "type": "main",
             "index": 0
@@ -670,32 +611,15 @@
         ],
         [
           {
-            "node": "Build: Status Report",
+            "node": "IF: mark_outcome",
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "Send: Cover Letter",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Send: Interview Prep",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Send: Skill Gap",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        ]
+      ]
+    },
+    "IF: mark_outcome": {
+      "main": [
         [
           {
             "node": "Process: Mark Outcome",
@@ -705,7 +629,25 @@
         ],
         [
           {
-            "node": "Send: General Response",
+            "node": "IF: status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: status": {
+      "main": [
+        [
+          {
+            "node": "Build: Status Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send: Response",
             "type": "main",
             "index": 0
           }
