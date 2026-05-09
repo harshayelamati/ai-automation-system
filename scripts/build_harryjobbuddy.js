@@ -1601,11 +1601,11 @@ const connections = {
   ]},
   "Execute: Build Resume DOCX": { main: [[{ node: "IF: build success", type: "main", index: 0 }]] },
   "IF: build success": { main: [
-    [{ node: "Format: Build Error",    type: "main", index: 0 }],  // FALSE → build failed
     [                                                               // TRUE → success
       { node: "Execute: Convert to PDF", type: "main", index: 0 },
       { node: "Read: Resume DOCX",       type: "main", index: 0 },
     ],
+    [{ node: "Format: Build Error",    type: "main", index: 0 }],  // FALSE → build failed
   ]},
   "Format: Build Error":        { main: [[{ node: "Send: Build Error",     type: "main", index: 0 }]] },
   "Execute: Convert to PDF":    { main: [[{ node: "Read: Resume PDF",      type: "main", index: 0 }]] },

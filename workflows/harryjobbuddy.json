@@ -1931,19 +1931,19 @@
       "main": [
         [
           {
-            "node": "Format: Build Error",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
             "node": "Execute: Convert to PDF",
             "type": "main",
             "index": 0
           },
           {
             "node": "Read: Resume DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format: Build Error",
             "type": "main",
             "index": 0
           }
