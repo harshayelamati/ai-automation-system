@@ -269,12 +269,12 @@
     },
     {
       "parameters": {
-        "command": "={{ $json.buildCmd }}"
+        "jsCode": "const { execSync } = require('child_process');\nconst rawCmd = $json.buildCmd;\nlet buildStdout = '', buildStderr = '', nodeFound = false;\n\nconst candidates = ['node', '/usr/local/bin/node', '/usr/bin/node',\n  '/root/.nvm/current/bin/node', '/root/.nvm/versions/node/v18/bin/node',\n  '/root/.nvm/versions/node/v20/bin/node', '/root/.nvm/versions/node/v22/bin/node'];\n\nfor (const bin of candidates) {\n  const cmd = rawCmd.replace(/^node /, '\"' + bin + '\" ');\n  try {\n    buildStdout = execSync(cmd, { timeout: 60000, cwd: '/home/ubuntu/job-scripts' }).toString();\n    nodeFound = true;\n    break;\n  } catch(e) {\n    buildStderr = (e.stderr?.toString() || e.message || '').slice(0, 600);\n  }\n}\nreturn [{ json: { ...$json, buildStdout, buildStderr, nodeFound } }];"
       },
       "id": "hj-08",
       "name": "Execute: Build Resume DOCX",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1750,
         260
@@ -283,12 +283,12 @@
     },
     {
       "parameters": {
-        "command": "libreoffice --headless --convert-to pdf {{ $('Prep: Resume Build').item.json.outputPath }} --outdir /root/.n8n-files/ 2>/dev/null || true"
+        "jsCode": "const { execSync } = require('child_process');\nconst outputPath = $('Prep: Resume Build').item.json.outputPath;\ntry {\n  execSync('libreoffice --headless --convert-to pdf \"' + outputPath + '\" --outdir /root/.n8n-files/', { timeout: 60000 });\n} catch(e) { /* LibreOffice not installed — skip */ }\nreturn [{ json: { ...$json } }];"
       },
       "id": "hj-08b",
       "name": "Execute: Convert to PDF",
-      "type": "n8n-nodes-base.executeCommand",
-      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         2000,
         140
