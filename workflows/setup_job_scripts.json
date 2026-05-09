@@ -1,0 +1,28 @@
+{
+  "name": "Setup: Deploy Job Scripts to Server",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "setup-01",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\nconst fs = require('fs');\nconst https = require('https');\n\nconst DIR = '/home/ubuntu/job-scripts';\nconst BASE = 'https://raw.githubusercontent.com/harshayelamati/ai-automation-system/main/scripts';\n\n// Helper: download a file\nfunction download(url, dest) {\n  return new Promise((resolve, reject) => {\n    const file = fs.createWriteStream(dest);\n    https.get(url, res => {\n      res.pipe(file);\n      file.on('finish', () => { file.close(); resolve(); });\n    }).on('error', reject);\n  });\n}\n\n// 1. Create directory\nexecSync(`mkdir -p ${DIR}`);\n\n// 2. Download scripts\nawait download(`${BASE}/build_resume_dynamic.js`, `${DIR}/build_resume_dynamic.js`);\nawait download(`${BASE}/resume_base_data.js`,     `${DIR}/resume_base_data.js`);\n\n// 3. Create package.json so npm install works\nfs.writeFileSync(`${DIR}/package.json`, JSON.stringify({ name: 'job-scripts', version: '1.0.0', dependencies: { docx: '^8.0.0' } }, null, 2));\n\n// 4. npm install\nexecSync(`cd ${DIR} && npm install`, { timeout: 120000 });\n\n// 5. Verify\nconst files = fs.readdirSync(DIR);\nconst docxOk = fs.existsSync(`${DIR}/node_modules/docx`);\n\nreturn [{ json: {\n  status: 'SUCCESS',\n  directory: DIR,\n  files,\n  docx_installed: docxOk,\n  message: docxOk ? '✅ All set. Resume DOCX generation ready.' : '⚠️ npm install may have failed — check manually.'\n}}];"
+      },
+      "id": "setup-02",
+      "name": "Deploy Scripts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": { "main": [[{ "node": "Deploy Scripts", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": {}
+}
