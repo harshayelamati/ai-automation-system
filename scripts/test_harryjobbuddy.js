@@ -167,9 +167,9 @@ test('No $json.* inside JSON.stringify() in any HTTP node body', () => {
   assert(bad.length === 0, `Found complex bodies in: ${bad.map(n=>n.name).join(', ')}`);
 });
 
-test('Telegram Trigger has unique webhookId hjb-v6-2026', () => {
+test('Telegram Trigger has unique webhookId hjb-v7-2026', () => {
   const trigger = wf.nodes.find(n => n.name === 'Telegram Trigger');
-  assert(trigger?.webhookId === 'hjb-v6-2026', `webhookId is: ${trigger?.webhookId}`);
+  assert(trigger?.webhookId === 'hjb-v7-2026', `webhookId is: ${trigger?.webhookId}`);
 });
 
 test('All Code nodes have non-empty jsCode', () => {

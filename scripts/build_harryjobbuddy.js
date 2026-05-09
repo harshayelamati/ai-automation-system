@@ -1153,7 +1153,7 @@ const nodes = [
     parameters: { updates: ["message"], additionalFields: {} },
     id: "hj-01", name: "Telegram Trigger",
     type: "n8n-nodes-base.telegramTrigger", typeVersion: 1,
-    position: [200, 300], webhookId: "hjb-v6-2026",
+    position: [200, 300], webhookId: "hjb-v7-2026",
     credentials: { telegramApi: TELEGRAM_CRED },
   },
 
