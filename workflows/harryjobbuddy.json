@@ -625,6 +625,124 @@
     },
     {
       "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinutes",
+              "value": 5
+            }
+          ]
+        },
+        "filters": {},
+        "options": {}
+      },
+      "id": "hj-g1",
+      "name": "Gmail Trigger: Job Emails",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        1260
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LI6rQyGpZ6Bivprw",
+          "name": "harryjobbuddy - Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $json;\nconst from    = (email.from?.value?.[0]?.address || String(email.from || '')).toLowerCase();\nconst subject = (email.subject || '').toLowerCase();\n\nconst jobSenders  = ['linkedin','indeed','dice.com','glassdoor','ziprecruiter',\n  'monster','careerbuilder','recruit','talent','hiring','hr@','careers@','jobs@'];\nconst jobKeywords = ['job','position','opportunity','role','opening',\n  'hiring','recruiter','apply','sap','developer','analyst','consultant',\n  'engineer','automation','abap','btp','data','remote'];\n\nconst isSenderMatch  = jobSenders.some(s => from.includes(s));\nconst isSubjectMatch = jobKeywords.some(k => subject.includes(k));\n\nif (!isSenderMatch && !isSubjectMatch) return [];\n\nconst emailText = `From: ${from}\\nSubject: ${email.subject || 'No subject'}\\n\\n${(email.text || email.snippet || '').slice(0, 3000)}`;\nreturn [{ json: { emailText } }];"
+      },
+      "id": "hj-g2",
+      "name": "Filter: Is Job Email?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        1260
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY_HERE"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: \"claude-haiku-4-5\", max_tokens: 1024, system: \"You are a job extraction AI for Harsha, an SAP ABAP developer on OPT visa seeking H1B sponsorship.\\n\\nHARSHA'S PROFILE:\\n- SAP ABAP Developer, 5+ years (LTI Mindtree, Doowon, Elsoft)\\n- Target: SAP BTP, SAP Technical Consultant, AI Automation, Data Analyst, BI Analyst\\n- Location: Sunnyvale CA, prefers remote\\n- Skills: ABAP, RICEF, S/4HANA, OData, BAPI, IDoc, n8n, Claude API, SQL\\n\\nExtract the job from this email and score it against Harsha's profile.\\n\\nReturn ONLY valid JSON (no markdown):\\n{\\n  \\\"is_job\\\": true,\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"location\\\": \\\"city/remote\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"apply_link\\\": \\\"URL or null\\\",\\n  \\\"score\\\": 7,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"kw1\\\", \\\"kw2\\\"],\\n  \\\"alert_text\\\": \\\"full Telegram alert message (see format below)\\\"\\n}\\n\\nalert_text format:\\n📨 *New Job from Email*\\n\\n💼 [Title] @ [Company]\\n📍 [Location] | 💰 [Salary] | 🛂 H1B: [Yes/No/Unknown]\\n⭐ Score: [X]/10 — [APPLY NOW/MAYBE/SKIP]\\n\\n[1-2 sentence reasoning]\\n\\n🔗 [apply_link or \\\"Link in your email\\\"]\\n\\nReply *\\\"resume\\\"* to generate your tailored CV.\\n\\nIf the email is NOT about a job opening (newsletter, promo, billing, etc.), return: {\\\"is_job\\\": false}\", messages: [{ role: \"user\", content: $json.emailText }] }) }}",
+        "options": {}
+      },
+      "id": "hj-g3",
+      "name": "Claude: Analyze Job Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        700,
+        1260
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst raw = $json.content?.[0]?.text || '';\n\nlet parsed;\ntry {\n  const clean = raw.replace(/^```json\\s*/i, '').replace(/```\\s*$/, '').trim();\n  parsed = JSON.parse(clean);\n} catch(e) { return []; }\n\nif (!parsed.is_job) return [];\n\nconst jobKey = `${(parsed.title||'').toLowerCase()}_${(parsed.company||'').toLowerCase()}`;\nif (!Array.isArray(sd.seenGmailJobs)) sd.seenGmailJobs = [];\nif (sd.seenGmailJobs.includes(jobKey)) return [];\nsd.seenGmailJobs.push(jobKey);\nif (sd.seenGmailJobs.length > 500) sd.seenGmailJobs = sd.seenGmailJobs.slice(-500);\n\nsd.lastAnalyzedJob = {\n  title: parsed.title, company: parsed.company,\n  link: parsed.apply_link, apply_link: parsed.apply_link,\n  keywords: parsed.keywords || [], exp_required: parsed.exp_required,\n  visa_sponsor: parsed.visa_sponsor, salary: parsed.salary,\n  location: parsed.location, score: parsed.score,\n  classification: parsed.classification,\n};\n\nconst chatId = sd.chatId;\nif (!chatId) return [];\n\nreturn [{ json: {\n  chatId,\n  text: parsed.alert_text || `📨 New job: ${parsed.title} @ ${parsed.company}\\n⭐ ${parsed.score}/10 — ${parsed.classification}`,\n} }];"
+      },
+      "id": "hj-g4",
+      "name": "Parse: Gmail Job Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        950,
+        1260
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-g5",
+      "name": "Send: Job Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        1260
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
         "rule": {
           "interval": [
             {
@@ -1153,6 +1271,50 @@
         [
           {
             "node": "Send: Outcome Confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger: Job Emails": {
+      "main": [
+        [
+          {
+            "node": "Filter: Is Job Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter: Is Job Email?": {
+      "main": [
+        [
+          {
+            "node": "Claude: Analyze Job Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude: Analyze Job Email": {
+      "main": [
+        [
+          {
+            "node": "Parse: Gmail Job Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse: Gmail Job Response": {
+      "main": [
+        [
+          {
+            "node": "Send: Job Alert",
             "type": "main",
             "index": 0
           }
