@@ -269,12 +269,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const { execSync } = require('child_process');\nconst rawCmd = $json.buildCmd; // starts with \"node /home/ubuntu/job-scripts/...\"\nlet buildStdout = '', buildStderr = '', nodeFound = false;\n\n// Try candidates in order — process.execPath not available in n8n sandbox\nconst candidates = ['node', '/usr/local/bin/node', '/usr/bin/node',\n  '/root/.nvm/current/bin/node', '/root/.nvm/versions/node/v18/bin/node',\n  '/root/.nvm/versions/node/v20/bin/node'];\n\nfor (const bin of candidates) {\n  const cmd = rawCmd.replace(/^node /, '\"' + bin + '\" ');\n  try {\n    buildStdout = execSync(cmd, { timeout: 60000, cwd: '/home/ubuntu/job-scripts' }).toString();\n    nodeFound = true;\n    break;\n  } catch(e) {\n    buildStderr = (e.stderr?.toString() || e.message || '').slice(0, 600);\n  }\n}\nreturn [{ json: { ...$json, buildStdout, buildStderr, nodeFound } }];"
+        "command": "={{ $json.buildCmd }}"
       },
       "id": "hj-08",
       "name": "Execute: Build Resume DOCX",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
       "position": [
         1750,
         260
@@ -283,12 +283,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const { execSync } = require('child_process');\nconst outputPath = $('Prep: Resume Build').item.json.outputPath;\ntry {\n  execSync('libreoffice --headless --convert-to pdf ' + outputPath + ' --outdir /tmp/', { timeout: 60000 });\n} catch(e) {\n  // LibreOffice not installed — skip PDF silently\n}\nreturn [{ json: { ...$json } }];"
+        "command": "libreoffice --headless --convert-to pdf {{ $('Prep: Resume Build').item.json.outputPath }} --outdir /tmp/ 2>/dev/null || true"
       },
       "id": "hj-08b",
       "name": "Execute: Convert to PDF",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
       "position": [
         2000,
         140
