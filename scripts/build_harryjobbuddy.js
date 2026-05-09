@@ -1263,14 +1263,14 @@ return [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nEr
   telegramSend("hj-08e", "Send: Build Error", 2500, 140),
 
   {
-    parameters: { filePath: "={{ $('Prep: Resume Build').item.json.outputPath }}" },
+    parameters: { filePath: "={{ $('Prep: Resume Build').item.json.outputPath || '/tmp/resume.docx' }}" },
     id: "hj-09", name: "Read: Resume DOCX",
     type: "n8n-nodes-base.readBinaryFile", typeVersion: 1,
     position: [2250, 320], onError: "continueRegularOutput",
   },
 
   {
-    parameters: { filePath: "={{ $('Prep: Resume Build').item.json.pdfPath }}" },
+    parameters: { filePath: "={{ $('Prep: Resume Build').item.json.pdfPath || '/tmp/resume.pdf' }}" },
     id: "hj-09b", name: "Read: Resume PDF",
     type: "n8n-nodes-base.readBinaryFile", typeVersion: 1,
     position: [2250, 140], onError: "continueRegularOutput",
@@ -1279,9 +1279,9 @@ return [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nEr
   {
     parameters: {
       operation: "sendDocument",
-      chatId: "={{ $('Prep: Resume Build').item.json.chatId }}",
+      chatId: "={{ $('Prep: Resume Build').item.json.chatId || '' }}",
       binaryData: true, binaryPropertyName: "data",
-      additionalFields: { caption: "={{ $('Prep: Resume Build').item.json.company }} — Tailored Resume 📄" },
+      additionalFields: { caption: "={{ $('Prep: Resume Build').item.json.company || 'Company' }} — Tailored Resume 📄" },
     },
     id: "hj-10", name: "Send: DOCX File",
     type: "n8n-nodes-base.telegram", typeVersion: 1,
@@ -1292,9 +1292,9 @@ return [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nEr
   {
     parameters: {
       operation: "sendDocument",
-      chatId: "={{ $('Prep: Resume Build').item.json.chatId }}",
+      chatId: "={{ $('Prep: Resume Build').item.json.chatId || '' }}",
       binaryData: true, binaryPropertyName: "data",
-      additionalFields: { caption: "={{ $('Prep: Resume Build').item.json.company }} — Tailored Resume PDF 📄" },
+      additionalFields: { caption: "={{ $('Prep: Resume Build').item.json.company || 'Company' }} — Tailored Resume PDF 📄" },
     },
     id: "hj-10b", name: "Send: PDF File",
     type: "n8n-nodes-base.telegram", typeVersion: 1,
@@ -1379,7 +1379,7 @@ return [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nEr
       operation: "getAll",
       returnAll: false,
       limit:     30,
-      filters: { q: "={{ $('Build: Email Query').item.json.gmailQuery }}" },
+      filters: { q: "={{ $('Build: Email Query').item.json.gmailQuery || 'subject:job' }}" },
       options: {},
     },
     id: "hj-ce4", name: "Gmail: Search Inbox",

@@ -357,7 +357,7 @@
     },
     {
       "parameters": {
-        "filePath": "={{ $('Prep: Resume Build').item.json.outputPath }}"
+        "filePath": "={{ $('Prep: Resume Build').item.json.outputPath || '/tmp/resume.docx' }}"
       },
       "id": "hj-09",
       "name": "Read: Resume DOCX",
@@ -371,7 +371,7 @@
     },
     {
       "parameters": {
-        "filePath": "={{ $('Prep: Resume Build').item.json.pdfPath }}"
+        "filePath": "={{ $('Prep: Resume Build').item.json.pdfPath || '/tmp/resume.pdf' }}"
       },
       "id": "hj-09b",
       "name": "Read: Resume PDF",
@@ -386,11 +386,11 @@
     {
       "parameters": {
         "operation": "sendDocument",
-        "chatId": "={{ $('Prep: Resume Build').item.json.chatId }}",
+        "chatId": "={{ $('Prep: Resume Build').item.json.chatId || '' }}",
         "binaryData": true,
         "binaryPropertyName": "data",
         "additionalFields": {
-          "caption": "={{ $('Prep: Resume Build').item.json.company }} — Tailored Resume 📄"
+          "caption": "={{ $('Prep: Resume Build').item.json.company || 'Company' }} — Tailored Resume 📄"
         }
       },
       "id": "hj-10",
@@ -412,11 +412,11 @@
     {
       "parameters": {
         "operation": "sendDocument",
-        "chatId": "={{ $('Prep: Resume Build').item.json.chatId }}",
+        "chatId": "={{ $('Prep: Resume Build').item.json.chatId || '' }}",
         "binaryData": true,
         "binaryPropertyName": "data",
         "additionalFields": {
-          "caption": "={{ $('Prep: Resume Build').item.json.company }} — Tailored Resume PDF 📄"
+          "caption": "={{ $('Prep: Resume Build').item.json.company || 'Company' }} — Tailored Resume PDF 📄"
         }
       },
       "id": "hj-10b",
@@ -749,7 +749,7 @@
         "returnAll": false,
         "limit": 30,
         "filters": {
-          "q": "={{ $('Build: Email Query').item.json.gmailQuery }}"
+          "q": "={{ $('Build: Email Query').item.json.gmailQuery || 'subject:job' }}"
         },
         "options": {}
       },
