@@ -600,7 +600,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\nconst stage   = structured.stage   || null;\n\nconst stageEmoji = { phone_screen: '📞', take_home: '📝', onsite: '🏢', final_round: '🎯', offer: '💰' };\nconst stageLabel = { phone_screen: 'Phone Screen', take_home: 'Take-Home', onsite: 'Onsite', final_round: 'Final Round', offer: 'Offer' };\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n    if (stage) app.stage = stage;\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\nconst outcomeDate = new Date().toISOString().split('T')[0];\nconst stagePart   = stage ? `\\n🔖 Stage: ${stageEmoji[stage] || ''} ${stageLabel[stage] || stage.replace(/_/g,' ')}` : '';\nconst matchedApp  = sd.applications?.find(a => a.company.toLowerCase().includes(company.toLowerCase()));\n\n// Build confirmation text (use Claude's response + stage info)\nconst text = ($json.response || 'Outcome logged.') + stagePart;\n\n// Also add to sd.applications if company wasn't previously tracked\nif (!matchedApp && Array.isArray(sd.applications)) {\n  const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n  sd.applications.push({ company, role: '', dateApplied: outcomeDate, status: statusMap[outcome] || outcome, outcomeDate, stage: stage || null });\n}\n\nreturn [{ json: {\n  chatId,\n  text,\n  // Spread flat for Sheets autoMapInputData\n  Company:        company,\n  Role:           matchedApp?.role || '',\n  'New Status':   statusLabel,\n  Stage:          stage ? (stageLabel[stage] || stage) : '',\n  'Outcome Date': outcomeDate,\n  Notes:          '',\n} }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = $json.chatId || sd.chatId;\nconst structured = $json.structured || {};\nconst company = structured.company || 'Unknown';\nconst outcome = structured.outcome || 'unknown';\nconst stage   = structured.stage   || null;\n\nconst stageEmoji = { phone_screen: '📞', take_home: '📝', onsite: '🏢', final_round: '🎯', offer: '💰' };\nconst stageLabel = { phone_screen: 'Phone Screen', take_home: 'Take-Home', onsite: 'Onsite', final_round: 'Final Round', offer: 'Offer' };\n\nif (Array.isArray(sd.applications)) {\n  const app = sd.applications.find(a =>\n    a.company.toLowerCase().includes(company.toLowerCase()) ||\n    company.toLowerCase().includes(a.company.toLowerCase())\n  );\n  if (app) {\n    const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n    app.status = statusMap[outcome] || app.status;\n    app.outcomeDate = new Date().toISOString().split('T')[0];\n    if (stage) app.stage = stage;\n  }\n}\n\nconst statusLabel = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' }[outcome] || outcome;\nconst outcomeDate = new Date().toISOString().split('T')[0];\nconst stagePart   = stage ? `\\n🔖 Stage: ${stageEmoji[stage] || ''} ${stageLabel[stage] || stage.replace(/_/g,' ')}` : '';\nconst matchedApp  = sd.applications?.find(a => a.company.toLowerCase().includes(company.toLowerCase()));\n\n// Build confirmation text (use Claude's response + stage info)\nconst text = ($json.response || 'Outcome logged.') + stagePart;\n\n// Also add to sd.applications if company wasn't previously tracked\nif (!matchedApp && Array.isArray(sd.applications)) {\n  const statusMap = { interview: 'Interview', rejected: 'Rejected', offer: 'Offer', ghosted: 'Ghosted' };\n  sd.applications.push({ company, role: '', dateApplied: outcomeDate, status: statusMap[outcome] || outcome, outcomeDate, stage: stage || null });\n}\n\nreturn [{ json: {\n  chatId,\n  text,\n  // Flat fields for Sheets update — must match Applications sheet column names exactly\n  Company:        company,\n  Status:         statusLabel,\n  Stage:          stage ? (stageLabel[stage] || stage) : '',\n  'Outcome Date': outcomeDate,\n} }];"
       },
       "id": "hj-34",
       "name": "Process: Mark Outcome",
@@ -614,7 +614,7 @@
     },
     {
       "parameters": {
-        "operation": "append",
+        "operation": "update",
         "documentId": {
           "__rl": true,
           "value": "1Fqfbe4BfXzHyOqdNWCG80emyAY9jntnEdt0oNl2xCcQ",
@@ -622,10 +622,18 @@
         },
         "sheetName": {
           "__rl": true,
-          "value": "Outcomes",
+          "value": "Applications",
           "mode": "name"
         },
         "dataMode": "autoMapInputData",
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Company",
+              "lookupValue": "={{ $json.Company }}"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "hj-34b",
