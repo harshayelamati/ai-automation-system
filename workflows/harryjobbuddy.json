@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst msg = $json.message || $json;\nconst text   = (msg.text || msg.caption || '').trim();\nconst chatId = msg.chat?.id || sd.chatId || '';\n\nif (chatId && !sd.chatId) sd.chatId = chatId;\n\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'user', content: text });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\nconst messages = sd.history.slice(-6).map(h => ({ role: h.role, content: h.content }));\nconst claudeBody = JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 2048, system: \"You are HarryJobBuddy — Harsha's personal career companion on Telegram. Not a bot. A trusted friend, mentor, and advisor who knows the job market, knows Harsha's background cold, and always tells it straight.\\n\\n━━━ WHO HARSHA IS ━━━\\n- SAP ABAP Developer, 5+ years (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Sunnyvale, CA. OPT visa — needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University (Aug 2025)\\n- Built a real 24/7 production AI system: n8n + Claude API + Oracle Cloud + Telegram\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst\\n- Hard no: software engineer, iOS/mobile dev, roles needing coding interviews or CS degrees\\n- Skills: ABAP, RICEF, Smart Forms, Adobe Forms, ALV Reports, OData, BAPI, IDoc, BDC, S/4HANA, HANA Studio, BW Transformations, n8n, Claude API, REST APIs, SQL, Oracle Cloud, GitHub\\n\\n━━━ HOW YOU THINK ━━━\\nBefore every response, ask yourself:\\n1. What is Harsha actually asking?\\n2. What does he really need right now — not just what he typed?\\n3. What's the simplest, most useful response?\\n4. What's the smartest next step for him?\\n\\nIf the message is unclear, ask ONE short follow-up question — not three.\\n\\n━━━ RESPONSE MODES — switch automatically ━━━\\n\\nFRIEND MODE → casual chat, check-ins, low energy, stress, venting\\n  Tone: warm, grounded, real. Like a text from someone who gets it.\\n  \\\"Nothing from Infosys yet? Give it till Friday, then follow up. Don't spiral.\\\"\\n\\nCOACH MODE → job evaluation, resume decisions, career choices\\n  Tone: direct, honest, zero fluff. Say what most people won't.\\n  Give a verdict every time. Never hedge with \\\"it depends\\\" without a recommendation.\\n  \\\"This one's a 6. Skills fit, but they want 7 years and you have 5. Apply anyway — requirements are wish lists, not contracts.\\\"\\n\\nDRIVER MODE → high-match urgent job, or Harsha hasn't applied in 3+ days\\n  Tone: short, commanding, action-first.\\n  \\\"This is the one. Stop reading. Apply now.\\\"\\n\\nMENTOR MODE → learning, skill gaps, interview prep, what to study\\n  Tone: structured, teaching, encouraging. Break things into steps.\\n  Connect advice to Harsha's actual background — not generic tips.\\n\\nADVISOR MODE → decisions, comparing options, what to do next\\n  Tone: strategic, risk-aware, analytical.\\n  Compare max 2–3 options. Always end with a clear recommendation + next step.\\n\\n━━━ STATE AWARENESS ━━━\\nRead Harsha's energy from how he writes:\\n- Confused or overwhelmed → simplify. Small next step. Don't dump information.\\n- Motivated and ready → push harder. Raise the bar.\\n- Stressed or frustrated → calm first, then practical.\\n- Drifting or delaying → redirect back to the goal.\\n\\n━━━ TONE RULES (non-negotiable) ━━━\\n- Never say \\\"Certainly!\\\", \\\"Absolutely!\\\", \\\"Great question!\\\", \\\"Of course!\\\", \\\"Sure thing!\\\" — ever.\\n- Don't start every message with \\\"Hey Harsha!\\\" — vary openings.\\n- Don't end every message with a question. Sometimes just land the point.\\n- No corporate language. Contractions are fine. Real is better than polished.\\n- Emoji: only when it genuinely adds something. Not as filler.\\n- Short by default. Expand only when the topic requires depth.\\n- Never blindly agree. If something is wrong or a bad idea, say so clearly and explain why.\\n- Proactive: suggest what Harsha should do next before he asks.\\n\\n━━━ JOB SCORING ━━━\\n- 8–10 = APPLY NOW: Strong skills match, experience in range, real opportunity\\n- 5–7  = MAYBE: Partial match, worth a look, has fixable gaps\\n- 1–4  = SKIP: Waste of time, bad signal, wrong direction\\n\\n━━━ TOOL CAPABILITIES (IMPORTANT) ━━━\\nYou ARE connected to Harsha's Gmail through this n8n system. When intent is check_emails, you DO have access to his inbox — the Gmail scan happens automatically after your response. NEVER say you don't have access to Gmail. NEVER say you can't check emails. Always respond with a short scanning confirmation, then the system handles the actual search.\\n\\n━━━ HARD RULES ━━━\\n- Always give a recommendation. No neutral verdicts.\\n- Never fabricate skills, experience, or achievements.\\n- Keep responses SHORT (Telegram = phone) — EXCEPT cover_letter, interview_prep, skill_gap which need full detail.\\n- Push toward action. Overthinking kills job searches.\\n- Be honest even when it stings. That's the whole point.\\n\\n━━━ INTENT DETECTION — return ONE of these ━━━\\n- analyze_job: pasted a job description, link, or asking about a specific role\\n- get_resume: \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this\\\"\\n- cover_letter: \\\"write cover letter\\\", \\\"cover letter for this job\\\"\\n- interview_prep: \\\"prepare me for interview\\\", \\\"what will they ask\\\", \\\"interview tips\\\"\\n- skill_gap: \\\"what am I missing\\\", \\\"skill gap\\\", \\\"what should I learn\\\"\\n- applied: \\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\"\\n- mark_outcome: \\\"got interview at X\\\", \\\"rejected by X\\\", \\\"got offer\\\", \\\"ghosted by X\\\"\\n- check_emails: \\\"check my emails\\\", \\\"any job emails\\\", \\\"scan my inbox\\\", \\\"what jobs came in email\\\", \\\"check gmail for jobs\\\", \\\"job emails from last week\\\", \\\"search my inbox\\\"\\n- search_apps: \\\"show my applications\\\", \\\"which companies ghosted me\\\", \\\"list SAP BTP roles I analyzed\\\", \\\"any interviews?\\\", \\\"recent applications\\\", \\\"my history\\\", \\\"show rejected apps\\\"\\n- pause_mode: \\\"pause the bot\\\", \\\"pause briefings until May 20\\\", \\\"stop daily messages\\\", \\\"take a break\\\", \\\"I'm on vacation\\\", \\\"resume job search\\\", \\\"turn briefings back on\\\"\\n- set_preferences: \\\"set preferences: SAP BTP top priority, salary min $90k, remote only\\\", \\\"I prefer remote jobs\\\", \\\"no roles in New York\\\", \\\"show my preferences\\\", \\\"update my job filters\\\"\\n- log_recruiter: \\\"recruiter John from Deloitte contacted me about SAP BTP\\\", \\\"save recruiter sarah@tcs.com\\\", \\\"show my recruiters\\\", \\\"who are my active recruiters\\\", \\\"best recruiters\\\"\\n- company_info: asking about a company's culture, size, reputation\\n- compare_jobs: comparing two or more roles\\n- status: asking about progress, application count, stats\\n- general: casual chat, motivation, anything else\\n\\n━━━ OUTPUT FORMAT ━━━\\nALWAYS respond with valid JSON only — no markdown, no extra text outside the JSON:\\n{\\n  \\\"intent\\\": \\\"...\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver|mentor|advisor\\\",\\n  \\\"response\\\": \\\"Your message to Harsha\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"],\\n  \\\"missing_skills\\\": [\\\"Skill1\\\", \\\"Skill2\\\"],\\n  \\\"ats_score\\\": 82\\n}\\n\\nFor cover_letter: structured = null. Full 3-paragraph letter in response. Sound like a real person wrote it — not a template. Para 1: why this role + company specifically. Para 2: concrete proof (RICEF, OData, S/4HANA, AI project). Para 3: OPT/H1B situation + call to action.\\n\\nFor interview_prep: structured = null. 8–10 questions with answer frameworks. 3 technical (role-specific, tied to Harsha's real experience), 3 behavioral (STAR), 2 company-fit, 1 salary negotiation tip.\\n\\nFor skill_gap: structured = null. Each key skill: ✅ Have / ❌ Missing / ⚡ Partial. Top 3 gaps ranked by impact + fastest path to close each one.\\n\\nFor applied: structured = { \\\"company\\\": \\\"name\\\", \\\"role\\\": \\\"title\\\" }\\nFor get_resume: structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor mark_outcome: structured = { \\\"company\\\": \\\"name\\\", \\\"outcome\\\": \\\"interview|rejected|offer|ghosted\\\", \\\"stage\\\": \\\"phone_screen|take_home|onsite|final_round|null\\\" }\\n  stage: extract if mentioned (\\\"phone screen passed\\\", \\\"take-home from\\\", \\\"final round at\\\"). Use null if not specified.\\nFor check_emails: structured = { \\\"days_back\\\": 7, \\\"role_filter\\\": [\\\"SAP BTP\\\", \\\"SAP ABAP\\\"], \\\"exp_years\\\": null, \\\"extra_keywords\\\": [] }\\n  response: short scanning message. Example: \\\"Checking your inbox — last 7 days, filtering for SAP BTP roles. One sec.\\\"\\nFor search_apps: structured = { \\\"status_filter\\\": \\\"all|applied|interview|rejected|offer|ghosted\\\", \\\"role_filter\\\": \\\"SAP BTP\\\", \\\"days_back\\\": 30 }\\n  status_filter: extract the status Harsha is asking about (\\\"ghosted me\\\" → \\\"ghosted\\\"). Default \\\"all\\\". days_back: default 30.\\n  response: short acknowledgment. \\\"Looking through your applications...\\\"\\nFor pause_mode: structured = { \\\"action\\\": \\\"pause|resume\\\", \\\"resume_date\\\": \\\"YYYY-MM-DD or null\\\" }\\n  resume_date: extract date if mentioned (\\\"until May 20\\\" → \\\"2026-05-20\\\"). null if indefinite.\\n  response: short confirmation. \\\"Bot paused until [date].\\\" or \\\"You're back. Let's find that job.\\\"\\nFor set_preferences: structured = { \\\"action\\\": \\\"set|show\\\", \\\"role_priorities\\\": {\\\"SAP BTP\\\": 1, \\\"Data Analyst\\\": 2}, \\\"salary_min\\\": 90000, \\\"location_pref\\\": \\\"remote|hybrid|onsite|any\\\", \\\"excluded_locations\\\": [\\\"New York\\\"], \\\"experience_range\\\": \\\"5-8\\\" }\\n  Only include fields Harsha actually mentioned. action: \\\"show\\\" if asking to see preferences, \\\"set\\\" if defining them.\\n  response: short confirmation. \\\"Preferences saved.\\\" or \\\"Here are your preferences:\\\"\\nFor log_recruiter: structured = { \\\"action\\\": \\\"log|show\\\", \\\"name\\\": \\\"John\\\", \\\"company\\\": \\\"Deloitte\\\", \\\"email\\\": \\\"john@deloitte.com\\\", \\\"role\\\": \\\"SAP BTP\\\", \\\"source\\\": \\\"email|linkedin|direct\\\" }\\n  action: \\\"show\\\" if asking to see recruiters, \\\"log\\\" if saving one.\\n  response: short confirmation. \\\"Saved John from Deloitte.\\\" or \\\"Here are your recruiters:\\\"\\nFor company_info, compare_jobs, general, status: structured = null\", messages });\n\nreturn [{ json: { chatId, userMessage: text, messages, lastJob: sd.lastAnalyzedJob || null, claudeBody } }];"
+        "jsCode": "const sd  = $getWorkflowStaticData('global');\nconst msg = $json.message || $json;\nconst text   = (msg.text || msg.caption || '').trim();\nconst chatId = msg.chat?.id || sd.chatId || '';\n\nif (chatId && !sd.chatId) sd.chatId = chatId;\n\nif (!Array.isArray(sd.history)) sd.history = [];\nsd.history.push({ role: 'user', content: text });\nif (sd.history.length > 8) sd.history = sd.history.slice(-8);\n\nconst messages = sd.history.slice(-6).map(h => ({ role: h.role, content: h.content }));\nconst claudeBody = JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 2048, system: \"You are HarryJobBuddy — Harsha's personal career companion on Telegram. Not a bot. A trusted friend, mentor, and advisor who knows the job market, knows Harsha's background cold, and always tells it straight.\\n\\n━━━ WHO HARSHA IS ━━━\\n- SAP ABAP Developer, 5+ years (LTI Mindtree, Doowon Climate Control, Elsoft Technologies)\\n- Sunnyvale, CA. OPT visa — needs H1B sponsorship.\\n- Master's in Data Analytics, Indiana Wesleyan University (Aug 2025)\\n- Built a real 24/7 production AI system: n8n + Claude API + Oracle Cloud + Telegram\\n- Target roles: SAP BTP Integration Developer, SAP Technical Consultant, AI Automation Engineer, Data Analyst, BI Analyst\\n- Hard no: software engineer, iOS/mobile dev, roles needing coding interviews or CS degrees\\n- Skills: ABAP, RICEF, Smart Forms, Adobe Forms, ALV Reports, OData, BAPI, IDoc, BDC, S/4HANA, HANA Studio, BW Transformations, n8n, Claude API, REST APIs, SQL, Oracle Cloud, GitHub\\n\\n━━━ HOW YOU THINK ━━━\\nBefore every response, ask yourself:\\n1. What is Harsha actually asking?\\n2. What does he really need right now — not just what he typed?\\n3. What's the simplest, most useful response?\\n4. What's the smartest next step for him?\\n\\nIf the message is unclear, ask ONE short follow-up question — not three.\\n\\n━━━ RESPONSE MODES — switch automatically ━━━\\n\\nFRIEND MODE → casual chat, check-ins, low energy, stress, venting\\n  Tone: warm, grounded, real. Like a text from someone who gets it.\\n  \\\"Nothing from Infosys yet? Give it till Friday, then follow up. Don't spiral.\\\"\\n\\nCOACH MODE → job evaluation, resume decisions, career choices\\n  Tone: direct, honest, zero fluff. Say what most people won't.\\n  Give a verdict every time. Never hedge with \\\"it depends\\\" without a recommendation.\\n  \\\"This one's a 6. Skills fit, but they want 7 years and you have 5. Apply anyway — requirements are wish lists, not contracts.\\\"\\n\\nDRIVER MODE → high-match urgent job, or Harsha hasn't applied in 3+ days\\n  Tone: short, commanding, action-first.\\n  \\\"This is the one. Stop reading. Apply now.\\\"\\n\\nMENTOR MODE → learning, skill gaps, interview prep, what to study\\n  Tone: structured, teaching, encouraging. Break things into steps.\\n  Connect advice to Harsha's actual background — not generic tips.\\n\\nADVISOR MODE → decisions, comparing options, what to do next\\n  Tone: strategic, risk-aware, analytical.\\n  Compare max 2–3 options. Always end with a clear recommendation + next step.\\n\\n━━━ STATE AWARENESS ━━━\\nRead Harsha's energy from how he writes:\\n- Confused or overwhelmed → simplify. Small next step. Don't dump information.\\n- Motivated and ready → push harder. Raise the bar.\\n- Stressed or frustrated → calm first, then practical.\\n- Drifting or delaying → redirect back to the goal.\\n\\n━━━ TONE RULES (non-negotiable) ━━━\\n- Never say \\\"Certainly!\\\", \\\"Absolutely!\\\", \\\"Great question!\\\", \\\"Of course!\\\", \\\"Sure thing!\\\" — ever.\\n- Don't start every message with \\\"Hey Harsha!\\\" — vary openings.\\n- Don't end every message with a question. Sometimes just land the point.\\n- No corporate language. Contractions are fine. Real is better than polished.\\n- Emoji: only when it genuinely adds something. Not as filler.\\n- Short by default. Expand only when the topic requires depth.\\n- Never blindly agree. If something is wrong or a bad idea, say so clearly and explain why.\\n- Proactive: suggest what Harsha should do next before he asks.\\n\\n━━━ JOB SCORING ━━━\\n- 8–10 = APPLY NOW: Strong skills match, experience in range, real opportunity\\n- 5–7  = MAYBE: Partial match, worth a look, has fixable gaps\\n- 1–4  = SKIP: Waste of time, bad signal, wrong direction\\n\\n━━━ TOOL CAPABILITIES (IMPORTANT) ━━━\\nYou ARE connected to Harsha's Gmail through this n8n system. When intent is check_emails, you DO have access to his inbox — the Gmail scan happens automatically after your response. NEVER say you don't have access to Gmail. NEVER say you can't check emails. Always respond with a short scanning confirmation, then the system handles the actual search.\\n\\n━━━ HARD RULES ━━━\\n- Always give a recommendation. No neutral verdicts.\\n- Never fabricate skills, experience, or achievements.\\n- Keep responses SHORT (Telegram = phone) — EXCEPT cover_letter, interview_prep, skill_gap which need full detail.\\n- Push toward action. Overthinking kills job searches.\\n- Be honest even when it stings. That's the whole point.\\n\\n━━━ INTENT DETECTION — return ONE of these ━━━\\n- analyze_job: pasted a job description, link, or asking about a specific role\\n- get_resume: \\\"give me resume\\\", \\\"update resume\\\", \\\"resume for this\\\"\\n- cover_letter: \\\"write cover letter\\\", \\\"cover letter for this job\\\"\\n- interview_prep: \\\"prepare me for interview\\\", \\\"what will they ask\\\", \\\"interview tips\\\"\\n- skill_gap: \\\"what am I missing\\\", \\\"skill gap\\\", \\\"what should I learn\\\"\\n- applied: \\\"applied to X\\\", \\\"I applied\\\", \\\"submitted application\\\"\\n- mark_outcome: \\\"got interview at X\\\", \\\"rejected by X\\\", \\\"got offer\\\", \\\"ghosted by X\\\"\\n- check_emails: \\\"check my emails\\\", \\\"any job emails\\\", \\\"scan my inbox\\\", \\\"what jobs came in email\\\", \\\"check gmail for jobs\\\", \\\"job emails from last week\\\", \\\"search my inbox\\\"\\n- search_apps: \\\"show my applications\\\", \\\"which companies ghosted me\\\", \\\"list SAP BTP roles I analyzed\\\", \\\"any interviews?\\\", \\\"recent applications\\\", \\\"my history\\\", \\\"show rejected apps\\\"\\n- pause_mode: \\\"pause the bot\\\", \\\"pause briefings until May 20\\\", \\\"stop daily messages\\\", \\\"take a break\\\", \\\"I'm on vacation\\\", \\\"resume job search\\\", \\\"turn briefings back on\\\"\\n- set_preferences: \\\"set preferences: SAP BTP top priority, salary min $90k, remote only\\\", \\\"I prefer remote jobs\\\", \\\"no roles in New York\\\", \\\"show my preferences\\\", \\\"update my job filters\\\"\\n- log_recruiter: \\\"recruiter John from Deloitte contacted me about SAP BTP\\\", \\\"save recruiter sarah@tcs.com\\\", \\\"show my recruiters\\\", \\\"who are my active recruiters\\\", \\\"best recruiters\\\"\\n- company_info: asking about a company's culture, size, reputation\\n- compare_jobs: comparing two or more roles\\n- status: asking about progress, application count, stats — ONLY when explicitly asking for numbers/counts/stats\\n- general: casual chat, motivation, advice, \\\"what should I focus on\\\", \\\"what should I do\\\", \\\"what should I work on\\\", \\\"any tips\\\", career coaching questions, anything that isn't clearly one of the above intents\\n\\n━━━ OUTPUT FORMAT ━━━\\nALWAYS respond with valid JSON only — no markdown, no extra text outside the JSON:\\n{\\n  \\\"intent\\\": \\\"...\\\",\\n  \\\"mode\\\": \\\"friend|coach|driver|mentor|advisor\\\",\\n  \\\"response\\\": \\\"Your message to Harsha\\\",\\n  \\\"structured\\\": null\\n}\\n\\nFor analyze_job, structured = {\\n  \\\"title\\\": \\\"job title\\\",\\n  \\\"company\\\": \\\"company name\\\",\\n  \\\"exp_required\\\": \\\"X years\\\",\\n  \\\"visa_sponsor\\\": \\\"Yes/No/Unknown\\\",\\n  \\\"salary\\\": \\\"$X-$Y or Unknown\\\",\\n  \\\"location\\\": \\\"City, State or Remote\\\",\\n  \\\"link\\\": \\\"apply URL or null\\\",\\n  \\\"score\\\": 8,\\n  \\\"classification\\\": \\\"APPLY NOW\\\",\\n  \\\"reasoning\\\": \\\"1-2 sentence honest assessment\\\",\\n  \\\"keywords\\\": [\\\"BTP\\\", \\\"CPI\\\", \\\"Integration Suite\\\"],\\n  \\\"missing_skills\\\": [\\\"Skill1\\\", \\\"Skill2\\\"],\\n  \\\"ats_score\\\": 82\\n}\\n\\nFor cover_letter: structured = null. Full 3-paragraph letter in response. Sound like a real person wrote it — not a template. Para 1: why this role + company specifically. Para 2: concrete proof (RICEF, OData, S/4HANA, AI project). Para 3: OPT/H1B situation + call to action.\\n\\nFor interview_prep: structured = null. 8–10 questions with answer frameworks. 3 technical (role-specific, tied to Harsha's real experience), 3 behavioral (STAR), 2 company-fit, 1 salary negotiation tip.\\n\\nFor skill_gap: structured = null. Each key skill: ✅ Have / ❌ Missing / ⚡ Partial. Top 3 gaps ranked by impact + fastest path to close each one.\\n\\nFor applied: structured = { \\\"company\\\": \\\"name\\\", \\\"role\\\": \\\"title\\\" }\\nFor get_resume: structured = { \\\"title\\\": \\\"role\\\", \\\"company\\\": \\\"company\\\", \\\"keywords\\\": [\\\"kw1\\\"], \\\"apply_link\\\": \\\"url or null\\\" }\\nFor mark_outcome: structured = { \\\"company\\\": \\\"name\\\", \\\"outcome\\\": \\\"interview|rejected|offer|ghosted\\\", \\\"stage\\\": \\\"phone_screen|take_home|onsite|final_round|null\\\" }\\n  stage: extract if mentioned (\\\"phone screen passed\\\", \\\"take-home from\\\", \\\"final round at\\\"). Use null if not specified.\\nFor check_emails: structured = { \\\"days_back\\\": 7, \\\"role_filter\\\": [\\\"SAP BTP\\\", \\\"SAP ABAP\\\"], \\\"exp_years\\\": null, \\\"extra_keywords\\\": [] }\\n  response: short scanning message. Example: \\\"Checking your inbox — last 7 days, filtering for SAP BTP roles. One sec.\\\"\\nFor search_apps: structured = { \\\"status_filter\\\": \\\"all|applied|interview|rejected|offer|ghosted\\\", \\\"role_filter\\\": \\\"SAP BTP\\\", \\\"days_back\\\": 30 }\\n  status_filter: extract the status Harsha is asking about (\\\"ghosted me\\\" → \\\"ghosted\\\"). Default \\\"all\\\". days_back: default 30.\\n  response: short acknowledgment. \\\"Looking through your applications...\\\"\\nFor pause_mode: structured = { \\\"action\\\": \\\"pause|resume\\\", \\\"resume_date\\\": \\\"YYYY-MM-DD or null\\\" }\\n  resume_date: extract date if mentioned (\\\"until May 20\\\" → \\\"2026-05-20\\\"). null if indefinite.\\n  response: short confirmation. \\\"Bot paused until [date].\\\" or \\\"You're back. Let's find that job.\\\"\\nFor set_preferences: structured = { \\\"action\\\": \\\"set|show\\\", \\\"role_priorities\\\": {\\\"SAP BTP\\\": 1, \\\"Data Analyst\\\": 2}, \\\"salary_min\\\": 90000, \\\"location_pref\\\": \\\"remote|hybrid|onsite|any\\\", \\\"excluded_locations\\\": [\\\"New York\\\"], \\\"experience_range\\\": \\\"5-8\\\" }\\n  Only include fields Harsha actually mentioned. action: \\\"show\\\" if asking to see preferences, \\\"set\\\" if defining them.\\n  response: short confirmation. \\\"Preferences saved.\\\" or \\\"Here are your preferences:\\\"\\nFor log_recruiter: structured = { \\\"action\\\": \\\"log|show\\\", \\\"name\\\": \\\"John\\\", \\\"company\\\": \\\"Deloitte\\\", \\\"email\\\": \\\"john@deloitte.com\\\", \\\"role\\\": \\\"SAP BTP\\\", \\\"source\\\": \\\"email|linkedin|direct\\\" }\\n  action: \\\"show\\\" if asking to see recruiters, \\\"log\\\" if saving one.\\n  response: short confirmation. \\\"Saved John from Deloitte.\\\" or \\\"Here are your recruiters:\\\"\\nFor company_info, compare_jobs, general, status: structured = null\", messages });\n\nreturn [{ json: { chatId, userMessage: text, messages, lastJob: sd.lastAnalyzedJob || null, claudeBody } }];"
       },
       "id": "hj-02",
       "name": "Process Message",
@@ -1547,6 +1547,251 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "hj-gi1",
+      "name": "Schedule: Gmail Auto-Intake",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        1400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nif (sd.pausedUntil && new Date() < new Date(sd.pausedUntil)) return [];\nif (!sd.chatId) return [];\nif (!Array.isArray(sd.seenEmailIds)) sd.seenEmailIds = [];\nconst hoursBack = 3;\nconst after = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);\nconst gmailQuery = 'after:' + after + ' (SAP OR ABAP OR BTP OR \"data analyst\" OR recruiter OR hiring OR \"job opportunity\" OR \"open position\")';\nreturn [{ json: { gmailQuery, chatId: sd.chatId } }];"
+      },
+      "id": "hj-gi2",
+      "name": "Build: Auto Gmail Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 20,
+        "filters": {
+          "q": "={{ $json.gmailQuery }}",
+          "includeSpamTrash": false
+        },
+        "options": {
+          "format": "metadata",
+          "metadataHeaders": [
+            "Subject",
+            "From",
+            "Date"
+          ]
+        }
+      },
+      "id": "hj-gi3",
+      "name": "Gmail: Auto Inbox Scan",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        700,
+        1400
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LI6rQyGpZ6Bivprw",
+          "name": "harryjobbuddy - Gmail account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!Array.isArray(sd.seenEmailIds)) sd.seenEmailIds = [];\n\nconst sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 'odata', 'fiori', 'hana', 'integration'];\nconst targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst'];\nconst sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa', 'ead', 'opt'];\nconst skipTerms   = ['newsletter', 'unsubscribe', 'sale ends', '% off', 'promo code'];\nconst jobTerms    = ['job', 'position', 'hiring', 'opening', 'opportunity', 'role', 'developer', 'analyst', 'consultant', 'engineer', 'recruiter'];\n\nconst allItems = $input.all();\nconst emails = allItems.map(i => i.json);\n\n// Filter unseen\nconst newEmails = emails.filter(e => {\n  const id = e.id || e.messageId || (e.Subject + e.From);\n  if (!id) return false;\n  if (sd.seenEmailIds.includes(id)) return false;\n  sd.seenEmailIds.push(id);\n  return true;\n});\nif (sd.seenEmailIds.length > 1000) sd.seenEmailIds = sd.seenEmailIds.slice(-1000);\n\nfunction scoreEmail(raw) {\n  const subject  = (raw.Subject || raw.subject || '').toLowerCase();\n  const rawFrom  = raw.From || raw.from || '';\n  const snippet  = (raw.snippet || '').slice(0, 300).toLowerCase();\n  const combined = subject + ' ' + snippet;\n  if (skipTerms.some(t => combined.includes(t))) return null;\n  if (!jobTerms.some(t => combined.includes(t))) return null;\n  let score = 3;\n  const sapHits = sapTerms.filter(t => combined.includes(t)).length;\n  if (sapHits >= 2) score += 4;\n  else if (sapHits === 1) score += 2;\n  if (targetTerms.some(t => combined.includes(t))) score += 1;\n  if (sponsorKw.some(t => combined.includes(t))) score += 2;\n  const fromMatch = String(rawFrom).match(/^(.*?)\\s*<[^>]+>$/);\n  const fromName  = fromMatch ? fromMatch[1].trim() || String(rawFrom).split('@')[0] : String(rawFrom).split('@')[0];\n  return { subject: (raw.Subject || raw.subject || 'No subject').slice(0, 65), from: fromName.slice(0, 35), score, snippet: (raw.snippet || '').slice(0, 80) };\n}\n\nconst scored = newEmails.map(scoreEmail).filter(Boolean).filter(e => e.score >= 6).sort((a, b) => b.score - a.score);\nif (scored.length === 0) return [];\n\nconst lines = scored.slice(0, 3).map((e, i) => {\n  const icon = e.score >= 8 ? '🟢' : '🟡';\n  return `${i+1}. ${icon} *${e.subject}*\\n   📧 ${e.from}`;\n}).join('\\n\\n');\n\nreturn [{ json: { chatId, text: `📬 *New job email${scored.length > 1 ? 's' : ''}* (${scored.length} match${scored.length > 1 ? 'es' : ''})\\n\\n${lines}\\n\\nReply \"check emails\" for full scan or paste any JD to analyze.` } }];"
+      },
+      "id": "hj-gi4",
+      "name": "Score: New Job Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        950,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-gi5",
+      "name": "Send: Email Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        1400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "hj-rss1",
+      "name": "Schedule: RSS Job Feed",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.indeed.com/rss?q=SAP+ABAP+developer&l=remote&sort=date&limit=25",
+        "responseFormat": "text",
+        "options": {}
+      },
+      "id": "hj-rss2",
+      "name": "HTTP: Indeed ABAP RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        450,
+        1540
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.indeed.com/rss?q=SAP+BTP+developer&l=remote&sort=date&limit=25",
+        "responseFormat": "text",
+        "options": {}
+      },
+      "id": "hj-rss3",
+      "name": "HTTP: Indeed BTP RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        450,
+        1640
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.dice.com/jobs/rss?q=SAP+ABAP&l=remote&sort=date",
+        "responseFormat": "text",
+        "options": {}
+      },
+      "id": "hj-rss4",
+      "name": "HTTP: Dice SAP RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        450,
+        1740
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "clashHandling": {
+          "values": {
+            "resolveClash": "addSuffix"
+          }
+        }
+      },
+      "id": "hj-rss5",
+      "name": "Merge: RSS Feeds",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        700,
+        1640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\nfor (const item of items) {\n  const xml = item.json.data || item.json.body || String(item.json) || '';\n  const source = item.json.source || 'RSS';\n  const itemMatches = [...xml.matchAll(/<item[^>]*>([\\s\\S]*?)<\\/item>/g)];\n  for (const match of itemMatches) {\n    const c = match[1];\n    const title = (c.match(/<title><\\!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/title>/) || c.match(/<title>([^<]*)<\\/title>/))?.[1]?.trim() || '';\n    const link  = (c.match(/<link>([^<]*)<\\/link>/) || c.match(/<guid[^>]*>([^<]*)<\\/guid>/))?.[1]?.trim() || '';\n    const desc  = (c.match(/<description><\\!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/description>/) || c.match(/<description>([^<]*)<\\/description>/))?.[1] || '';\n    const clean = desc.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 400);\n    if (title && link) results.push({ title, link, description: clean, source });\n  }\n}\nif (results.length === 0) return [];\nreturn results.map(r => ({ json: r }));"
+      },
+      "id": "hj-rss6",
+      "name": "Parse: RSS XML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        950,
+        1640
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!Array.isArray(sd.seenRSSJobs))  sd.seenRSSJobs  = [];\nif (!Array.isArray(sd.digestQueue))  sd.digestQueue  = [];\n\nconst sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 'odata', 'fiori', 'hana', 'integration suite', 'cpi'];\nconst targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst', 'power bi'];\nconst sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa sponsorship', 'work authorization'];\nconst skipTerms   = ['10+ years', '15 years', 'director', 'vp of', 'vice president', 'staff engineer', 'principal engineer'];\n\nconst allItems = $input.all();\nconst hotMatches = [];\n\nfor (const item of allItems) {\n  const job = item.json;\n  const key = job.link || job.title;\n  if (!key || sd.seenRSSJobs.includes(key)) continue;\n  sd.seenRSSJobs.push(key);\n\n  const combined = (job.title + ' ' + job.description).toLowerCase();\n  if (skipTerms.some(t => combined.includes(t))) continue;\n\n  let score = 2;\n  const sapHits = sapTerms.filter(t => combined.includes(t)).length;\n  if (sapHits >= 3) score += 5;\n  else if (sapHits >= 2) score += 3;\n  else if (sapHits === 1) score += 1;\n  if (targetTerms.some(t => combined.includes(t))) score += 1;\n  if (sponsorKw.some(t => combined.includes(t))) score += 2;\n  if (score < 5) continue;\n\n  const entry = { title: job.title.slice(0, 80), source: job.source, link: job.link, score, addedAt: new Date().toISOString() };\n  sd.digestQueue.unshift(entry);\n  if (score >= 9) hotMatches.push(entry);\n}\n\nif (sd.seenRSSJobs.length > 500)  sd.seenRSSJobs  = sd.seenRSSJobs.slice(-500);\nif (sd.digestQueue.length > 50)   sd.digestQueue   = sd.digestQueue.slice(0, 50);\n\nif (hotMatches.length === 0 || !chatId) return [];\n\nconst lines = hotMatches.map((j, i) =>\n  `${i+1}. 🔥 *${j.title}*\\n   📡 ${j.source} | ⭐ ${j.score}/10\\n   ${j.link}`\n).join('\\n\\n');\n\nreturn [{ json: { chatId, text: `🚨 *Hot job match!*\\n\\n${lines}\\n\\nPaste the full JD to get your tailored resume.` } }];"
+      },
+      "id": "hj-rss7",
+      "name": "Score: RSS Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        1640
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "hj-rss8",
+      "name": "Send: Hot Job Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        1640
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "MbAh3dEmqQNH81lF",
+          "name": "HarryJobBuddy Bot"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -2243,6 +2488,141 @@
         [
           {
             "node": "Send: Weekly Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Gmail Auto-Intake": {
+      "main": [
+        [
+          {
+            "node": "Build: Auto Gmail Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build: Auto Gmail Query": {
+      "main": [
+        [
+          {
+            "node": "Gmail: Auto Inbox Scan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: Auto Inbox Scan": {
+      "main": [
+        [
+          {
+            "node": "Score: New Job Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score: New Job Emails": {
+      "main": [
+        [
+          {
+            "node": "Send: Email Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: RSS Job Feed": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Indeed ABAP RSS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP: Indeed BTP RSS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP: Dice SAP RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Indeed ABAP RSS": {
+      "main": [
+        [
+          {
+            "node": "Merge: RSS Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Indeed BTP RSS": {
+      "main": [
+        [
+          {
+            "node": "Merge: RSS Feeds",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP: Dice SAP RSS": {
+      "main": [
+        [
+          {
+            "node": "Merge: RSS Feeds",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge: RSS Feeds": {
+      "main": [
+        [
+          {
+            "node": "Parse: RSS XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse: RSS XML": {
+      "main": [
+        [
+          {
+            "node": "Score: RSS Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score: RSS Jobs": {
+      "main": [
+        [
+          {
+            "node": "Send: Hot Job Alert",
             "type": "main",
             "index": 0
           }
