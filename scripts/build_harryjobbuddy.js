@@ -92,6 +92,9 @@ Read Harsha's energy from how he writes:
 - 5–7  = MAYBE: Partial match, worth a look, has fixable gaps
 - 1–4  = SKIP: Waste of time, bad signal, wrong direction
 
+━━━ TOOL CAPABILITIES (IMPORTANT) ━━━
+You ARE connected to Harsha's Gmail through this n8n system. When intent is check_emails, you DO have access to his inbox — the Gmail scan happens automatically after your response. NEVER say you don't have access to Gmail. NEVER say you can't check emails. Always respond with a short scanning confirmation, then the system handles the actual search.
+
 ━━━ HARD RULES ━━━
 - Always give a recommendation. No neutral verdicts.
 - Never fabricate skills, experience, or achievements.
@@ -114,8 +117,8 @@ Read Harsha's energy from how he writes:
 - log_recruiter: "recruiter John from Deloitte contacted me about SAP BTP", "save recruiter sarah@tcs.com", "show my recruiters", "who are my active recruiters", "best recruiters"
 - company_info: asking about a company's culture, size, reputation
 - compare_jobs: comparing two or more roles
-- status: asking about progress, application count, stats
-- general: casual chat, motivation, anything else
+- status: asking about progress, application count, stats — ONLY when explicitly asking for numbers/counts/stats
+- general: casual chat, motivation, advice, "what should I focus on", "what should I do", "what should I work on", "any tips", career coaching questions, anything that isn't clearly one of the above intents
 
 ━━━ OUTPUT FORMAT ━━━
 ALWAYS respond with valid JSON only — no markdown, no extra text outside the JSON:
@@ -412,8 +415,8 @@ the same patterns that power SAP BTP and Integration Suite. \\
 Master's in Data Analytics, Indiana Wesleyan University (2025). Based in Sunnyvale, CA. Seeking H1B sponsorship.\`;
 
 const dateStamp  = new Date().toISOString().split('T')[0];
-const outputPath = \`/home/ubuntu/n8n-files/HarshaYelamati_\${company}_\${dateStamp}.docx\`;
-const pdfPath    = \`/home/ubuntu/n8n-files/HarshaYelamati_\${company}_\${dateStamp}.pdf\`;
+const outputPath = \`/root/.n8n-files/HarshaYelamati_\${company}_\${dateStamp}.docx\`;
+const pdfPath    = \`/root/.n8n-files/HarshaYelamati_\${company}_\${dateStamp}.pdf\`;
 
 const ctx = JSON.stringify({
   summary:    tailoredSummary,
@@ -545,13 +548,11 @@ if (!matchedApp && Array.isArray(sd.applications)) {
 return [{ json: {
   chatId,
   text,
-  // Spread flat for Sheets autoMapInputData
+  // Flat fields for Sheets update — must match Applications sheet column names exactly
   Company:        company,
-  Role:           matchedApp?.role || '',
-  'New Status':   statusLabel,
+  Status:         statusLabel,
   Stage:          stage ? (stageLabel[stage] || stage) : '',
   'Outcome Date': outcomeDate,
-  Notes:          '',
 } }];
 `.trim();
 
@@ -993,6 +994,255 @@ return [{ json: {
 }}];
 `.trim();
 
+// ── Code: Gmail auto-intake — build query for last 3 hours ──────────────────────
+const CODE_AUTO_GMAIL_SETUP = `
+const sd = $getWorkflowStaticData('global');
+if (sd.pausedUntil && new Date() < new Date(sd.pausedUntil)) return [];
+if (!sd.chatId) return [];
+if (!Array.isArray(sd.seenEmailIds)) sd.seenEmailIds = [];
+const hoursBack = 3;
+const after = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+const gmailQuery = 'after:' + after + ' (SAP OR ABAP OR BTP OR "data analyst" OR recruiter OR hiring OR "job opportunity" OR "open position")';
+return [{ json: { gmailQuery, chatId: sd.chatId } }];
+`.trim();
+
+// ── Code: Score new emails, alert if high-score and unseen ───────────────────────
+const CODE_AUTO_SCORE_EMAILS = `
+const sd = $getWorkflowStaticData('global');
+const chatId = sd.chatId;
+if (!Array.isArray(sd.seenEmailIds)) sd.seenEmailIds = [];
+
+const sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 'odata', 'fiori', 'hana', 'integration'];
+const targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst'];
+const sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa', 'ead', 'opt'];
+const skipTerms   = ['newsletter', 'unsubscribe', 'sale ends', '% off', 'promo code'];
+const jobTerms    = ['job', 'position', 'hiring', 'opening', 'opportunity', 'role', 'developer', 'analyst', 'consultant', 'engineer', 'recruiter'];
+
+const allItems = $input.all();
+const emails = allItems.map(i => i.json);
+
+// Filter unseen
+const newEmails = emails.filter(e => {
+  const id = e.id || e.messageId || (e.Subject + e.From);
+  if (!id) return false;
+  if (sd.seenEmailIds.includes(id)) return false;
+  sd.seenEmailIds.push(id);
+  return true;
+});
+if (sd.seenEmailIds.length > 1000) sd.seenEmailIds = sd.seenEmailIds.slice(-1000);
+
+// Helper: decode base64url body text from Gmail payload parts
+function extractBody(email) {
+  try {
+    const payload = email.payload || {};
+    const parts   = payload.parts || [];
+    let raw = '';
+    // Try direct body first
+    if (payload.body && payload.body.data) raw = payload.body.data;
+    // Walk parts for text/plain
+    for (const part of parts) {
+      if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+        raw = part.body.data; break;
+      }
+      // Nested parts (multipart/alternative)
+      if (part.parts) {
+        for (const sub of part.parts) {
+          if (sub.mimeType === 'text/plain' && sub.body && sub.body.data) {
+            raw = sub.body.data; break;
+          }
+        }
+        if (raw) break;
+      }
+    }
+    if (!raw) return email.snippet || '';
+    const decoded = Buffer.from(raw.replace(/-/g,'+').replace(/_/g,'/'), 'base64').toString('utf-8');
+    return decoded.replace(/\\r/g,'').slice(0, 2000);
+  } catch(e) { return email.snippet || ''; }
+}
+
+function quickScore(raw) {
+  const subject  = (raw.Subject || raw.subject || '').toLowerCase();
+  const rawFrom  = raw.From || raw.from || '';
+  const snippet  = (raw.snippet || '').slice(0, 300).toLowerCase();
+  const combined = subject + ' ' + snippet;
+  if (skipTerms.some(t => combined.includes(t))) return null;
+  if (!jobTerms.some(t => combined.includes(t))) return null;
+  let score = 3;
+  const sapHits = sapTerms.filter(t => combined.includes(t)).length;
+  if (sapHits >= 2) score += 4;
+  else if (sapHits === 1) score += 2;
+  if (targetTerms.some(t => combined.includes(t))) score += 1;
+  if (sponsorKw.some(t => combined.includes(t))) score += 2;
+  const fromMatch = String(rawFrom).match(/^(.*?)\\s*<[^>]+>$/);
+  const fromName  = fromMatch ? fromMatch[1].trim() || String(rawFrom).split('@')[0] : String(rawFrom).split('@')[0];
+  return { subject: (raw.Subject || raw.subject || 'No subject').slice(0, 65), from: fromName.slice(0, 35), score };
+}
+
+const scored = newEmails
+  .map(e => { const s = quickScore(e); return s ? { ...s, emailBody: extractBody(e) } : null; })
+  .filter(Boolean)
+  .filter(e => e.score >= 5)
+  .sort((a, b) => b.score - a.score);
+
+if (scored.length === 0) return [];
+
+// Send top-scoring email to Claude for full analysis
+const top = scored[0];
+return [{ json: { chatId, subject: top.subject, from: top.from, emailBody: top.emailBody, totalMatches: scored.length } }];
+`.trim();
+
+// ── Code: Build Claude body for auto-analysis of email ───────────────────────
+const CODE_AUTO_BUILD_CLAUDE = `
+const { subject, from, emailBody, chatId, totalMatches } = $json;
+
+const systemPrompt = \`You are a job email analyzer. Extract job details from an email and return ONLY a JSON object.
+Return this exact JSON shape (no markdown, no explanation):
+{
+  "is_job": true,
+  "title": "exact job title or null",
+  "company": "company name or null",
+  "location": "city/remote/hybrid or null",
+  "salary": "salary range or null",
+  "visa_sponsor": true/false/null,
+  "exp_required": "e.g. 5+ years or null",
+  "key_skills": ["skill1","skill2"],
+  "score": 1-10,
+  "classification": "APPLY NOW" or "MAYBE" or "SKIP",
+  "reasoning": "one sentence why"
+}\`;
+
+const userMsg = \`Email subject: \${subject}\\nFrom: \${from}\\n\\nEmail body:\\n\${emailBody}\`;
+
+const claudeBody = JSON.stringify({
+  model: 'claude-haiku-4-5',
+  max_tokens: 400,
+  system: systemPrompt,
+  messages: [{ role: 'user', content: userMsg }],
+});
+
+return [{ json: { claudeBody, chatId, subject, from, totalMatches } }];
+`.trim();
+
+// ── Code: Format Claude auto-analysis into Telegram alert ────────────────────
+const CODE_AUTO_FORMAT_ALERT = `
+const chatId   = $('Score: New Job Emails').item.json.chatId;
+const subject  = $('Score: New Job Emails').item.json.subject;
+const from     = $('Score: New Job Emails').item.json.from;
+const total    = $('Score: New Job Emails').item.json.totalMatches || 1;
+const raw      = $json;
+
+let job = {};
+try {
+  const content = raw.content?.[0]?.text || raw.body || '{}';
+  const cleaned = content.replace(/^[\\s\\S]*?(\\{)/,'$1').replace(/(\\})[\\s\\S]*$/,'$1');
+  job = JSON.parse(cleaned);
+} catch(e) {
+  job = { is_job: false };
+}
+
+if (!job.is_job) return [];
+
+const score = job.score || 5;
+if (score < 5) return [];
+
+const icon  = score >= 8 ? '🟢' : score >= 6 ? '🟡' : '🔴';
+const label = score >= 8 ? 'APPLY NOW' : score >= 6 ? 'MAYBE' : 'SKIP';
+
+const lines = [
+  \`📬 *Auto-detected job email*\${total > 1 ? \` (+\${total-1} more)\` : ''},\`,
+  \`\`,
+  \`\${icon} *\${label}*\`,
+  \`\`,
+  \`💼 \${job.title || subject}\`,
+  job.company  ? \`🏢 \${job.company}\`                          : null,
+  job.location ? \`📍 \${job.location}\`                         : null,
+  job.salary   ? \`💰 \${job.salary}\`                           : null,
+  job.visa_sponsor === true  ? \`🛂 H1B: Yes\`                  : null,
+  job.visa_sponsor === false ? \`🛂 H1B: Not mentioned\`        : null,
+  job.exp_required ? \`🎯 Exp: \${job.exp_required}\`            : null,
+  \`⭐ Score: \${score}/10\`,
+  \`\`,
+  \`💡 \${job.reasoning || ''}\`,
+  \`\`,
+  \`📧 From: \${from}\`,
+  \`\`,
+  \`👉 Reply "give me resume" to generate your tailored resume\`,
+].filter(l => l !== null).join('\\n');
+
+return [{ json: { chatId, text: lines } }];
+`.trim();
+
+// ── Code: Parse RSS XML feed ──────────────────────────────────────────────────────
+const CODE_PARSE_RSS = `
+const items = $input.all();
+const results = [];
+for (const item of items) {
+  const xml = item.json.data || item.json.body || String(item.json) || '';
+  const source = item.json.source || 'RSS';
+  const itemMatches = [...xml.matchAll(/<item[^>]*>([\\s\\S]*?)<\\/item>/g)];
+  for (const match of itemMatches) {
+    const c = match[1];
+    const title = (c.match(/<title><\\!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/title>/) || c.match(/<title>([^<]*)<\\/title>/))?.[1]?.trim() || '';
+    const link  = (c.match(/<link>([^<]*)<\\/link>/) || c.match(/<guid[^>]*>([^<]*)<\\/guid>/))?.[1]?.trim() || '';
+    const desc  = (c.match(/<description><\\!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/description>/) || c.match(/<description>([^<]*)<\\/description>/))?.[1] || '';
+    const clean = desc.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 400);
+    if (title && link) results.push({ title, link, description: clean, source });
+  }
+}
+if (results.length === 0) return [];
+return results.map(r => ({ json: r }));
+`.trim();
+
+// ── Code: Score RSS jobs, add to digestQueue, alert hot matches ───────────────────
+const CODE_SCORE_RSS_JOBS = `
+const sd = $getWorkflowStaticData('global');
+const chatId = sd.chatId;
+if (!Array.isArray(sd.seenRSSJobs))  sd.seenRSSJobs  = [];
+if (!Array.isArray(sd.digestQueue))  sd.digestQueue  = [];
+
+const sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 'odata', 'fiori', 'hana', 'integration suite', 'cpi'];
+const targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst', 'power bi'];
+const sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa sponsorship', 'work authorization'];
+const skipTerms   = ['10+ years', '15 years', 'director', 'vp of', 'vice president', 'staff engineer', 'principal engineer'];
+
+const allItems = $input.all();
+const hotMatches = [];
+
+for (const item of allItems) {
+  const job = item.json;
+  const key = job.link || job.title;
+  if (!key || sd.seenRSSJobs.includes(key)) continue;
+  sd.seenRSSJobs.push(key);
+
+  const combined = (job.title + ' ' + job.description).toLowerCase();
+  if (skipTerms.some(t => combined.includes(t))) continue;
+
+  let score = 2;
+  const sapHits = sapTerms.filter(t => combined.includes(t)).length;
+  if (sapHits >= 3) score += 5;
+  else if (sapHits >= 2) score += 3;
+  else if (sapHits === 1) score += 1;
+  if (targetTerms.some(t => combined.includes(t))) score += 1;
+  if (sponsorKw.some(t => combined.includes(t))) score += 2;
+  if (score < 5) continue;
+
+  const entry = { title: job.title.slice(0, 80), source: job.source, link: job.link, score, addedAt: new Date().toISOString() };
+  sd.digestQueue.unshift(entry);
+  if (score >= 9) hotMatches.push(entry);
+}
+
+if (sd.seenRSSJobs.length > 500)  sd.seenRSSJobs  = sd.seenRSSJobs.slice(-500);
+if (sd.digestQueue.length > 50)   sd.digestQueue   = sd.digestQueue.slice(0, 50);
+
+if (hotMatches.length === 0 || !chatId) return [];
+
+const lines = hotMatches.map((j, i) =>
+  \`\${i+1}. 🔥 *\${j.title}*\\n   📡 \${j.source} | ⭐ \${j.score}/10\\n   \${j.link}\`
+).join('\\n\\n');
+
+return [{ json: { chatId, text: \`🚨 *Hot job match!*\\n\\n\${lines}\\n\\nPaste the full JD to get your tailored resume.\` } }];
+`.trim();
+
 // ── Code: Build Gmail search query from Claude's check_emails structured output ─
 const CODE_BUILD_EMAIL_QUERY = `
 const sd = $getWorkflowStaticData('global');
@@ -1036,10 +1286,8 @@ const chatId       = buildData.chatId;
 const daysBack     = buildData.daysBack || 7;
 const roleFilterStr = buildData.roleFilterStr || 'all roles';
 
-// $input.all() is available in per-item mode — runs once per email item
-// Only output on the LAST item to avoid sending duplicate Telegram messages
+// Runs in "Run Once for All Items" mode — processes all emails in one pass
 const allItems = $input.all();
-if ($itemIndex < allItems.length - 1) return [];
 const emails   = allItems.map(item => item.json);
 
 const sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 's4hana', 'odata', 'fiori', 'hana', 'integration'];
@@ -1049,10 +1297,14 @@ const skipTerms   = ['newsletter', 'unsubscribe', 'sale ends', '% off', 'promo c
 const jobTerms    = ['job', 'position', 'hiring', 'opening', 'opportunity', 'role', 'developer', 'analyst', 'consultant', 'engineer', 'recruiter'];
 
 function scoreEmail(raw) {
-  const subject  = (raw.subject || '').toLowerCase();
-  const fromAddr = typeof raw.from === 'object'
-    ? (raw.from?.value?.[0]?.address || '')
-    : String(raw.from || '');
+  // Gmail node returns capitalized fields (Subject, From) — support both cases
+  const subject  = (raw.Subject || raw.subject || '').toLowerCase();
+  const rawFrom  = raw.From || raw.from || '';
+  // Parse "Display Name <email@domain.com>" format
+  const fromMatch = String(rawFrom).match(/^(.*?)\\s*<[^>]+>$/);
+  const fromName  = fromMatch
+    ? fromMatch[1].trim() || String(rawFrom).split('@')[0]
+    : String(rawFrom).split('@')[0];
   const snippet  = (raw.snippet || raw.text || '').slice(0, 500).toLowerCase();
   const combined = subject + ' ' + snippet;
 
@@ -1066,12 +1318,8 @@ function scoreEmail(raw) {
   if (targetTerms.some(t => combined.includes(t))) score += 1;
   if (sponsorKw.some(t => combined.includes(t)))   score += 2;
 
-  const fromName = typeof raw.from === 'object'
-    ? (raw.from?.value?.[0]?.name || fromAddr.split('@')[0])
-    : fromAddr.split('@')[0];
-
   return {
-    subject: (raw.subject || 'No subject').slice(0, 65),
+    subject: (raw.Subject || raw.subject || 'No subject').slice(0, 65),
     from:    fromName.slice(0, 35),
     score,
     snippet: (raw.snippet || '').slice(0, 90),
@@ -1240,7 +1488,7 @@ return [{ json: { ...$json, buildStdout, buildStderr, nodeFound } }];
 const { execSync } = require('child_process');
 const outputPath = $('Prep: Resume Build').item.json.outputPath;
 try {
-  execSync('libreoffice --headless --convert-to pdf "' + outputPath + '" --outdir /home/ubuntu/n8n-files/', { timeout: 60000 });
+  execSync('libreoffice --headless --convert-to pdf "' + outputPath + '" --outdir /root/.n8n-files/', { timeout: 60000 });
 } catch(e) { /* LibreOffice not installed — skip */ }
 return [{ json: { ...$json } }];
 `.trim(), 2000, 140),
@@ -1334,10 +1582,16 @@ return [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nEr
   codeNode("hj-34", "Process: Mark Outcome", CODE_MARK_OUTCOME, 1500, 1060),
   {
     parameters: {
-      operation: "append",
+      operation: "update",
       documentId: { __rl: true, value: GOOGLE_SHEET_ID, mode: "id" },
-      sheetName:  { __rl: true, value: "Outcomes", mode: "name" },
+      sheetName:  { __rl: true, value: "Applications", mode: "name" },
       dataMode: "autoMapInputData",
+      filtersUI: {
+        values: [{
+          lookupColumn: "Company",
+          lookupValue:  "={{ $json.Company }}",
+        }],
+      },
       options: {},
     },
     id: "hj-34b", name: "Sheets: Log Outcome",
@@ -1520,6 +1774,84 @@ return [{ json: { chatId, text: '❌ Resume build failed.' + nodeMsg + '\\n\\nEr
   },
   codeNode("hj-rc6", "Restore: Recruiter Data", CODE_RESTORE_RECRUITER, 2250, 2060),
   telegramSend("hj-rc7", "Send: Recruiter Confirm", 2500, 2060),
+
+  // ══ GMAIL AUTO-INTAKE (every 5 min) ══════════════════════════════════════════
+  scheduleNode("hj-gi1", "Schedule: Gmail Auto-Intake", "*/5 * * * *", 200, 1400),
+  codeNode("hj-gi2", "Build: Auto Gmail Query", CODE_AUTO_GMAIL_SETUP, 450, 1400),
+  {
+    parameters: {
+      operation: "getAll", limit: 15,
+      filters: { q: "={{ $json.gmailQuery }}", includeSpamTrash: false },
+      options: {},
+    },
+    id: "hj-gi3", name: "Gmail: Auto Inbox Scan",
+    type: "n8n-nodes-base.gmail", typeVersion: 2,
+    position: [700, 1400], credentials: { gmailOAuth2: GMAIL_CRED },
+    onError: "continueRegularOutput",
+  },
+  codeNode("hj-gi4", "Score: New Job Emails", CODE_AUTO_SCORE_EMAILS, 950, 1400),
+  codeNode("hj-gi6", "Build: Auto Claude Body",  CODE_AUTO_BUILD_CLAUDE, 1200, 1400),
+  {
+    parameters: {
+      method: "POST", url: "https://api.anthropic.com/v1/messages",
+      sendHeaders: true,
+      headerParameters: { parameters: [
+        { name: "x-api-key",         value: ANTHROPIC_API_KEY },
+        { name: "anthropic-version", value: "2023-06-01" },
+        { name: "content-type",      value: "application/json" },
+      ]},
+      sendBody: true, contentType: "raw", rawContentType: "application/json",
+      body: `={{ $json.claudeBody }}`,
+      options: {},
+    },
+    id: "hj-gi7", name: "Claude: Auto Analyze Email",
+    type: "n8n-nodes-base.httpRequest", typeVersion: 4,
+    position: [1450, 1400], onError: "continueRegularOutput",
+  },
+  codeNode("hj-gi8", "Format: Auto Alert",    CODE_AUTO_FORMAT_ALERT, 1700, 1400),
+  telegramSend("hj-gi5", "Send: Email Alert", 1950, 1400),
+
+  // ══ AUTO JOB FEED — RSS (every 2 hours) ══════════════════════════════════════
+  scheduleNode("hj-rss1", "Schedule: RSS Job Feed", "0 */2 * * *", 200, 1600),
+  {
+    parameters: {
+      url: "https://www.indeed.com/rss?q=SAP+ABAP+developer&l=remote&sort=date&limit=25",
+      responseFormat: "text",
+      options: {},
+    },
+    id: "hj-rss2", name: "HTTP: Indeed ABAP RSS",
+    type: "n8n-nodes-base.httpRequest", typeVersion: 4,
+    position: [450, 1540], onError: "continueRegularOutput",
+  },
+  {
+    parameters: {
+      url: "https://www.indeed.com/rss?q=SAP+BTP+developer&l=remote&sort=date&limit=25",
+      responseFormat: "text",
+      options: {},
+    },
+    id: "hj-rss3", name: "HTTP: Indeed BTP RSS",
+    type: "n8n-nodes-base.httpRequest", typeVersion: 4,
+    position: [450, 1640], onError: "continueRegularOutput",
+  },
+  {
+    parameters: {
+      url: "https://www.dice.com/jobs/rss?q=SAP+ABAP&l=remote&sort=date",
+      responseFormat: "text",
+      options: {},
+    },
+    id: "hj-rss4", name: "HTTP: Dice SAP RSS",
+    type: "n8n-nodes-base.httpRequest", typeVersion: 4,
+    position: [450, 1740], onError: "continueRegularOutput",
+  },
+  {
+    parameters: { mode: "append", clashHandling: { values: { resolveClash: "addSuffix" } } },
+    id: "hj-rss5", name: "Merge: RSS Feeds",
+    type: "n8n-nodes-base.merge", typeVersion: 2,
+    position: [700, 1640],
+  },
+  codeNode("hj-rss6", "Parse: RSS XML",       CODE_PARSE_RSS,       950, 1640),
+  codeNode("hj-rss7", "Score: RSS Jobs",      CODE_SCORE_RSS_JOBS,  1200, 1640),
+  telegramSend("hj-rss8", "Send: Hot Job Alert", 1450, 1640),
 ];
 
 // ── Connections ───────────────────────────────────────────────────────────────
@@ -1649,6 +1981,28 @@ const connections = {
   "Run: Weekly Review":         { main: [[{ node: "Claude: Weekly Coach",    type: "main", index: 0 }]] },
   "Claude: Weekly Coach":       { main: [[{ node: "Parse: Coach Response",   type: "main", index: 0 }]] },
   "Parse: Coach Response":      { main: [[{ node: "Send: Weekly Review",     type: "main", index: 0 }]] },
+
+  // Gmail auto-intake path
+  "Schedule: Gmail Auto-Intake":  { main: [[{ node: "Build: Auto Gmail Query",    type: "main", index: 0 }]] },
+  "Build: Auto Gmail Query":      { main: [[{ node: "Gmail: Auto Inbox Scan",     type: "main", index: 0 }]] },
+  "Gmail: Auto Inbox Scan":       { main: [[{ node: "Score: New Job Emails",      type: "main", index: 0 }]] },
+  "Score: New Job Emails":        { main: [[{ node: "Build: Auto Claude Body",    type: "main", index: 0 }]] },
+  "Build: Auto Claude Body":      { main: [[{ node: "Claude: Auto Analyze Email", type: "main", index: 0 }]] },
+  "Claude: Auto Analyze Email":   { main: [[{ node: "Format: Auto Alert",         type: "main", index: 0 }]] },
+  "Format: Auto Alert":           { main: [[{ node: "Send: Email Alert",          type: "main", index: 0 }]] },
+
+  // RSS auto job feed path
+  "Schedule: RSS Job Feed": { main: [
+    [{ node: "HTTP: Indeed ABAP RSS", type: "main", index: 0 }],
+    [{ node: "HTTP: Indeed BTP RSS",  type: "main", index: 0 }],
+    [{ node: "HTTP: Dice SAP RSS",    type: "main", index: 0 }],
+  ]},
+  "HTTP: Indeed ABAP RSS": { main: [[{ node: "Merge: RSS Feeds", type: "main", index: 0 }]] },
+  "HTTP: Indeed BTP RSS":  { main: [[{ node: "Merge: RSS Feeds", type: "main", index: 1 }]] },
+  "HTTP: Dice SAP RSS":    { main: [[{ node: "Merge: RSS Feeds", type: "main", index: 2 }]] },
+  "Merge: RSS Feeds":      { main: [[{ node: "Parse: RSS XML",      type: "main", index: 0 }]] },
+  "Parse: RSS XML":        { main: [[{ node: "Score: RSS Jobs",     type: "main", index: 0 }]] },
+  "Score: RSS Jobs":       { main: [[{ node: "Send: Hot Job Alert", type: "main", index: 0 }]] },
 };
 
 // ── Assemble + write ──────────────────────────────────────────────────────────

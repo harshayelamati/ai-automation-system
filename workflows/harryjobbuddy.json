@@ -1585,19 +1585,12 @@
     {
       "parameters": {
         "operation": "getAll",
-        "limit": 20,
+        "limit": 15,
         "filters": {
           "q": "={{ $json.gmailQuery }}",
           "includeSpamTrash": false
         },
-        "options": {
-          "format": "metadata",
-          "metadataHeaders": [
-            "Subject",
-            "From",
-            "Date"
-          ]
-        }
+        "options": {}
       },
       "id": "hj-gi3",
       "name": "Gmail: Auto Inbox Scan",
@@ -1617,7 +1610,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!Array.isArray(sd.seenEmailIds)) sd.seenEmailIds = [];\n\nconst sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 'odata', 'fiori', 'hana', 'integration'];\nconst targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst'];\nconst sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa', 'ead', 'opt'];\nconst skipTerms   = ['newsletter', 'unsubscribe', 'sale ends', '% off', 'promo code'];\nconst jobTerms    = ['job', 'position', 'hiring', 'opening', 'opportunity', 'role', 'developer', 'analyst', 'consultant', 'engineer', 'recruiter'];\n\nconst allItems = $input.all();\nconst emails = allItems.map(i => i.json);\n\n// Filter unseen\nconst newEmails = emails.filter(e => {\n  const id = e.id || e.messageId || (e.Subject + e.From);\n  if (!id) return false;\n  if (sd.seenEmailIds.includes(id)) return false;\n  sd.seenEmailIds.push(id);\n  return true;\n});\nif (sd.seenEmailIds.length > 1000) sd.seenEmailIds = sd.seenEmailIds.slice(-1000);\n\nfunction scoreEmail(raw) {\n  const subject  = (raw.Subject || raw.subject || '').toLowerCase();\n  const rawFrom  = raw.From || raw.from || '';\n  const snippet  = (raw.snippet || '').slice(0, 300).toLowerCase();\n  const combined = subject + ' ' + snippet;\n  if (skipTerms.some(t => combined.includes(t))) return null;\n  if (!jobTerms.some(t => combined.includes(t))) return null;\n  let score = 3;\n  const sapHits = sapTerms.filter(t => combined.includes(t)).length;\n  if (sapHits >= 2) score += 4;\n  else if (sapHits === 1) score += 2;\n  if (targetTerms.some(t => combined.includes(t))) score += 1;\n  if (sponsorKw.some(t => combined.includes(t))) score += 2;\n  const fromMatch = String(rawFrom).match(/^(.*?)\\s*<[^>]+>$/);\n  const fromName  = fromMatch ? fromMatch[1].trim() || String(rawFrom).split('@')[0] : String(rawFrom).split('@')[0];\n  return { subject: (raw.Subject || raw.subject || 'No subject').slice(0, 65), from: fromName.slice(0, 35), score, snippet: (raw.snippet || '').slice(0, 80) };\n}\n\nconst scored = newEmails.map(scoreEmail).filter(Boolean).filter(e => e.score >= 6).sort((a, b) => b.score - a.score);\nif (scored.length === 0) return [];\n\nconst lines = scored.slice(0, 3).map((e, i) => {\n  const icon = e.score >= 8 ? '🟢' : '🟡';\n  return `${i+1}. ${icon} *${e.subject}*\\n   📧 ${e.from}`;\n}).join('\\n\\n');\n\nreturn [{ json: { chatId, text: `📬 *New job email${scored.length > 1 ? 's' : ''}* (${scored.length} match${scored.length > 1 ? 'es' : ''})\\n\\n${lines}\\n\\nReply \"check emails\" for full scan or paste any JD to analyze.` } }];"
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst chatId = sd.chatId;\nif (!Array.isArray(sd.seenEmailIds)) sd.seenEmailIds = [];\n\nconst sapTerms    = ['sap', 'abap', 'btp', 's/4hana', 'odata', 'fiori', 'hana', 'integration'];\nconst targetTerms = ['data analyst', 'data engineer', 'ai automation', 'bi analyst'];\nconst sponsorKw   = ['h1b', 'h-1b', 'sponsor', 'visa', 'ead', 'opt'];\nconst skipTerms   = ['newsletter', 'unsubscribe', 'sale ends', '% off', 'promo code'];\nconst jobTerms    = ['job', 'position', 'hiring', 'opening', 'opportunity', 'role', 'developer', 'analyst', 'consultant', 'engineer', 'recruiter'];\n\nconst allItems = $input.all();\nconst emails = allItems.map(i => i.json);\n\n// Filter unseen\nconst newEmails = emails.filter(e => {\n  const id = e.id || e.messageId || (e.Subject + e.From);\n  if (!id) return false;\n  if (sd.seenEmailIds.includes(id)) return false;\n  sd.seenEmailIds.push(id);\n  return true;\n});\nif (sd.seenEmailIds.length > 1000) sd.seenEmailIds = sd.seenEmailIds.slice(-1000);\n\n// Helper: decode base64url body text from Gmail payload parts\nfunction extractBody(email) {\n  try {\n    const payload = email.payload || {};\n    const parts   = payload.parts || [];\n    let raw = '';\n    // Try direct body first\n    if (payload.body && payload.body.data) raw = payload.body.data;\n    // Walk parts for text/plain\n    for (const part of parts) {\n      if (part.mimeType === 'text/plain' && part.body && part.body.data) {\n        raw = part.body.data; break;\n      }\n      // Nested parts (multipart/alternative)\n      if (part.parts) {\n        for (const sub of part.parts) {\n          if (sub.mimeType === 'text/plain' && sub.body && sub.body.data) {\n            raw = sub.body.data; break;\n          }\n        }\n        if (raw) break;\n      }\n    }\n    if (!raw) return email.snippet || '';\n    const decoded = Buffer.from(raw.replace(/-/g,'+').replace(/_/g,'/'), 'base64').toString('utf-8');\n    return decoded.replace(/\\r/g,'').slice(0, 2000);\n  } catch(e) { return email.snippet || ''; }\n}\n\nfunction quickScore(raw) {\n  const subject  = (raw.Subject || raw.subject || '').toLowerCase();\n  const rawFrom  = raw.From || raw.from || '';\n  const snippet  = (raw.snippet || '').slice(0, 300).toLowerCase();\n  const combined = subject + ' ' + snippet;\n  if (skipTerms.some(t => combined.includes(t))) return null;\n  if (!jobTerms.some(t => combined.includes(t))) return null;\n  let score = 3;\n  const sapHits = sapTerms.filter(t => combined.includes(t)).length;\n  if (sapHits >= 2) score += 4;\n  else if (sapHits === 1) score += 2;\n  if (targetTerms.some(t => combined.includes(t))) score += 1;\n  if (sponsorKw.some(t => combined.includes(t))) score += 2;\n  const fromMatch = String(rawFrom).match(/^(.*?)\\s*<[^>]+>$/);\n  const fromName  = fromMatch ? fromMatch[1].trim() || String(rawFrom).split('@')[0] : String(rawFrom).split('@')[0];\n  return { subject: (raw.Subject || raw.subject || 'No subject').slice(0, 65), from: fromName.slice(0, 35), score };\n}\n\nconst scored = newEmails\n  .map(e => { const s = quickScore(e); return s ? { ...s, emailBody: extractBody(e) } : null; })\n  .filter(Boolean)\n  .filter(e => e.score >= 5)\n  .sort((a, b) => b.score - a.score);\n\nif (scored.length === 0) return [];\n\n// Send top-scoring email to Claude for full analysis\nconst top = scored[0];\nreturn [{ json: { chatId, subject: top.subject, from: top.from, emailBody: top.emailBody, totalMatches: scored.length } }];"
       },
       "id": "hj-gi4",
       "name": "Score: New Job Emails",
@@ -1625,6 +1618,71 @@
       "typeVersion": 2,
       "position": [
         950,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { subject, from, emailBody, chatId, totalMatches } = $json;\n\nconst systemPrompt = `You are a job email analyzer. Extract job details from an email and return ONLY a JSON object.\nReturn this exact JSON shape (no markdown, no explanation):\n{\n  \"is_job\": true,\n  \"title\": \"exact job title or null\",\n  \"company\": \"company name or null\",\n  \"location\": \"city/remote/hybrid or null\",\n  \"salary\": \"salary range or null\",\n  \"visa_sponsor\": true/false/null,\n  \"exp_required\": \"e.g. 5+ years or null\",\n  \"key_skills\": [\"skill1\",\"skill2\"],\n  \"score\": 1-10,\n  \"classification\": \"APPLY NOW\" or \"MAYBE\" or \"SKIP\",\n  \"reasoning\": \"one sentence why\"\n}`;\n\nconst userMsg = `Email subject: ${subject}\\nFrom: ${from}\\n\\nEmail body:\\n${emailBody}`;\n\nconst claudeBody = JSON.stringify({\n  model: 'claude-haiku-4-5',\n  max_tokens: 400,\n  system: systemPrompt,\n  messages: [{ role: 'user', content: userMsg }],\n});\n\nreturn [{ json: { claudeBody, chatId, subject, from, totalMatches } }];"
+      },
+      "id": "hj-gi6",
+      "name": "Build: Auto Claude Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY_HERE"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.claudeBody }}",
+        "options": {}
+      },
+      "id": "hj-gi7",
+      "name": "Claude: Auto Analyze Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1450,
+        1400
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const chatId   = $('Score: New Job Emails').item.json.chatId;\nconst subject  = $('Score: New Job Emails').item.json.subject;\nconst from     = $('Score: New Job Emails').item.json.from;\nconst total    = $('Score: New Job Emails').item.json.totalMatches || 1;\nconst raw      = $json;\n\nlet job = {};\ntry {\n  const content = raw.content?.[0]?.text || raw.body || '{}';\n  const cleaned = content.replace(/^[\\s\\S]*?(\\{)/,'$1').replace(/(\\})[\\s\\S]*$/,'$1');\n  job = JSON.parse(cleaned);\n} catch(e) {\n  job = { is_job: false };\n}\n\nif (!job.is_job) return [];\n\nconst score = job.score || 5;\nif (score < 5) return [];\n\nconst icon  = score >= 8 ? '🟢' : score >= 6 ? '🟡' : '🔴';\nconst label = score >= 8 ? 'APPLY NOW' : score >= 6 ? 'MAYBE' : 'SKIP';\n\nconst lines = [\n  `📬 *Auto-detected job email*${total > 1 ? ` (+${total-1} more)` : ''},`,\n  ``,\n  `${icon} *${label}*`,\n  ``,\n  `💼 ${job.title || subject}`,\n  job.company  ? `🏢 ${job.company}`                          : null,\n  job.location ? `📍 ${job.location}`                         : null,\n  job.salary   ? `💰 ${job.salary}`                           : null,\n  job.visa_sponsor === true  ? `🛂 H1B: Yes`                  : null,\n  job.visa_sponsor === false ? `🛂 H1B: Not mentioned`        : null,\n  job.exp_required ? `🎯 Exp: ${job.exp_required}`            : null,\n  `⭐ Score: ${score}/10`,\n  ``,\n  `💡 ${job.reasoning || ''}`,\n  ``,\n  `📧 From: ${from}`,\n  ``,\n  `👉 Reply \"give me resume\" to generate your tailored resume`,\n].filter(l => l !== null).join('\\n');\n\nreturn [{ json: { chatId, text: lines } }];"
+      },
+      "id": "hj-gi8",
+      "name": "Format: Auto Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
         1400
       ],
       "onError": "continueRegularOutput"
@@ -1643,7 +1701,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1,
       "position": [
-        1200,
+        1950,
         1400
       ],
       "credentials": {
@@ -2528,6 +2586,39 @@
       ]
     },
     "Score: New Job Emails": {
+      "main": [
+        [
+          {
+            "node": "Build: Auto Claude Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build: Auto Claude Body": {
+      "main": [
+        [
+          {
+            "node": "Claude: Auto Analyze Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude: Auto Analyze Email": {
+      "main": [
+        [
+          {
+            "node": "Format: Auto Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format: Auto Alert": {
       "main": [
         [
           {
