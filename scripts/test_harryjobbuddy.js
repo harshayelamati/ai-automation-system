@@ -125,8 +125,8 @@ test('Workflow JSON is valid and parseable', () => {
   assert(wf.connections && typeof wf.connections === 'object', 'Missing connections');
 });
 
-test('Node count is 75', () => {
-  assert(wf.nodes.length === 75, `Expected 75 nodes, got ${wf.nodes.length}`);
+test('Node count is 91', () => {
+  assert(wf.nodes.length === 91, `Expected 91 nodes, got ${wf.nodes.length}`);
 });
 
 test('No duplicate node IDs', () => {
@@ -153,8 +153,8 @@ test('All connection targets exist as nodes', () => {
   assert(missing.length === 0, `Missing connection targets: ${missing.join('; ')}`);
 });
 
-test('All 3 Claude HTTP nodes use $json.claudeBody (no complex expressions)', () => {
-  ['Claude: Intent + Response','Claude: Analyze Job Email','Claude: Weekly Coach'].forEach(name => {
+test('All Claude HTTP nodes use $json.claudeBody (no complex expressions)', () => {
+  ['Claude: Intent + Response','Claude: Analyze Job Email','Claude: Weekly Coach','Claude: Auto Analyze Email'].forEach(name => {
     const node = getNode(name);
     assert(node.parameters.body === '={{ $json.claudeBody }}', `${name} body is not simple: ${node.parameters.body?.substring(0,60)}`);
   });
@@ -219,13 +219,17 @@ test('Google Sheets credential used consistently', () => {
   });
 });
 
-test('Anthropic API key placeholder exists (user must replace it)', () => {
-  const httpNodes = wf.nodes.filter(n => n.type === 'n8n-nodes-base.httpRequest');
-  const hasKey = httpNodes.every(n => {
+test('Anthropic API key placeholder exists on all Claude HTTP nodes', () => {
+  // Only Claude API nodes (url contains api.anthropic.com) need x-api-key
+  const claudeNodes = wf.nodes.filter(n =>
+    n.type === 'n8n-nodes-base.httpRequest' &&
+    (n.parameters?.url || '').includes('api.anthropic.com')
+  );
+  assert(claudeNodes.length >= 4, `Expected at least 4 Claude HTTP nodes, got ${claudeNodes.length}`);
+  claudeNodes.forEach(n => {
     const headers = n.parameters?.headerParameters?.parameters || [];
-    return headers.some(h => h.name === 'x-api-key');
+    assert(headers.some(h => h.name === 'x-api-key'), `${n.name} missing x-api-key header`);
   });
-  assert(hasKey, 'Some Claude HTTP nodes missing x-api-key header');
 });
 
 
@@ -512,7 +516,7 @@ test('Returns flat fields for Sheets (no rowData nesting)', () => {
   const { result } = runMarkOutcome({ chatId:'12345', response:'Interview!', structured:{ company:'Deloitte', outcome:'interview', stage:null } });
   const json = result[0].json;
   assert(json.Company === 'Deloitte', `json.Company should be 'Deloitte', got: ${json.Company}`);
-  assert(json['New Status'] === 'Interview', `json['New Status'] wrong: ${json['New Status']}`);
+  assert(json.Status === 'Interview', `json.Status wrong: ${json.Status}`);
   assert(!json.rowData, 'rowData should be spread flat');
 });
 
@@ -996,15 +1000,13 @@ test('Score emails: promo email filtered out', () => {
   assertContains(result[0].json.text, 'none look like job opportunities', 'Promo email should be filtered');
 });
 
-test('Score emails: returns [] for non-last item (dedup guard)', () => {
+test('Score emails: processes all items in a single pass (no per-item dedup needed)', () => {
+  // Score & Format Emails runs in "Run Once for All Items" mode — processes all at once
   const items = [...mockEmailItems]; // 4 items
-  // Run for item index 0 (not last) — should return []
-  const result = runCode(CODE_SCORE_EMAILS, items[0].json, {},
-    { allItems: items, itemIndex: 0,
-      nodeRefs: { 'Build: Email Query': { chatId:'12345', daysBack:7, roleFilterStr:'all' } }
-    }
-  ).result;
-  assert(result.length === 0, `Non-last item should return [], got ${result.length} items`);
+  const { result } = runScoreEmails(items);
+  // Should return exactly 1 consolidated result (the formatted message)
+  assert(result.length === 1, `Expected 1 consolidated result, got ${result.length}`);
+  assertContains(result[0].json.text, '🔍', 'Should contain scan result emoji');
 });
 
 test('Score emails: empty input returns no-results message', () => {

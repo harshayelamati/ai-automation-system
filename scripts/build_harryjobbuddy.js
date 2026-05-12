@@ -415,8 +415,8 @@ the same patterns that power SAP BTP and Integration Suite. \\
 Master's in Data Analytics, Indiana Wesleyan University (2025). Based in Sunnyvale, CA. Seeking H1B sponsorship.\`;
 
 const dateStamp  = new Date().toISOString().split('T')[0];
-const outputPath = \`/root/.n8n-files/HarshaYelamati_\${company}_\${dateStamp}.docx\`;
-const pdfPath    = \`/root/.n8n-files/HarshaYelamati_\${company}_\${dateStamp}.pdf\`;
+const outputPath = \`/home/ubuntu/n8n-files/HarshaYelamati_\${company}_\${dateStamp}.docx\`;
+const pdfPath    = \`/home/ubuntu/n8n-files/HarshaYelamati_\${company}_\${dateStamp}.pdf\`;
 
 const ctx = JSON.stringify({
   summary:    tailoredSummary,
@@ -1488,7 +1488,7 @@ return [{ json: { ...$json, buildStdout, buildStderr, nodeFound } }];
 const { execSync } = require('child_process');
 const outputPath = $('Prep: Resume Build').item.json.outputPath;
 try {
-  execSync('libreoffice --headless --convert-to pdf "' + outputPath + '" --outdir /root/.n8n-files/', { timeout: 60000 });
+  execSync('libreoffice --headless --convert-to pdf "' + outputPath + '" --outdir /home/ubuntu/n8n-files/', { timeout: 60000 });
 } catch(e) { /* LibreOffice not installed — skip */ }
 return [{ json: { ...$json } }];
 `.trim(), 2000, 140),
